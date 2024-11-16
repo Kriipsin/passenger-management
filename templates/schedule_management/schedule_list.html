@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Lista pojazdów</title>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
+    <h1>Lista kursów</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Czas odjazdu</th>
+                <th>Miejsce początkowe</th>
+                <th>Miejsce docelowe</th>
+                <th>Częstotliwość przejazdu</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for schedule in schedules %}
+            <tr>
+                <td>{{ schedule.time }}</td>
+                <td>{{ schedule.origin }}</td>
+                <td>{{ schedule.destination }}</td>
+                <td>{{ schedule.frequency }}</td>
+                <td><a href="{% url 'schedule_edit' schedule.id %}">Edytuj</a></td>
+                <td><a href="{% url 'schedule_delete' schedule.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten kurs?')">Usuń</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'schedule_add' %}">Dodaj nowy kurs</a>
+
+</body>
+</html>

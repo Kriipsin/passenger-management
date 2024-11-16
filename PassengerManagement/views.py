@@ -151,7 +151,43 @@ def driver_delete(request, driver_id):
 
 def schedule_list(request):
     schedules = Schedule.objects.all()
-    return render(request, 'schedule_list.html', {'schedules': schedules})
+    return render(request, 'schedule_management/schedule_list.html', {'schedules': schedules})
+
+def schedule_add(request):
+    if request.method == 'POST':
+        time = request.POST.get('time')
+        origin = request.POST.get('origin')
+        destination = request.POST.get('destination')
+        frequency = request.POST.get('frequency')
+
+        Schedule.objects.create(
+            time=time,
+            origin=origin,
+            destination=destination,
+            frequency=frequency
+        )
+
+        return redirect('schedule_list')
+    return render(request, 'schedule_management/schedule_add.html')
+
+def schedule_edit(request, schedule_id):
+    schedule = get_object_or_404(Schedule, id=schedule_id)
+
+    if request.method == 'POST':
+        schedule.time = request.POST.get('time')
+        schedule.origin = request.POST.get('origin')
+        schedule.destination = request.POST.get('destination')
+        schedule.frequency = request.POST.get('frequency')
+        schedule.save()
+
+        return redirect('schedule_list')
+
+    return render(request, 'schedule_management/schedule_edit.html', {'schedule': schedule})
+
+def schedule_delete(request, schedule_id):
+    schedule = get_object_or_404(Schedule, id=schedule_id)
+    schedule.delete()
+    return redirect('schedule_list')
 
 def trip_list(request):
     trips = Trip.objects.all()

@@ -1,10 +1,16 @@
 /* Stylizacja paska nawigacyjnego */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
 .navbar {
     background-color: #aaa; /* Kolor tła */
     overflow: hidden;
     display: flex;
     align-items: center;
     padding: 10px 20px;
+
 }
 
 .navbar a {
@@ -24,6 +30,28 @@
 }
 
 .logo {
-    width: 40px; /* Rozmiar ikony autobusu */
-    margin-right: 15px;
+    width: 60px; /* Rozmiar ikony autobusu */
+    padding-top: 5px;
+    /*margin-right: 10px;*/
+
+}
+
+p {
+    margin-left: 10px;
+}
+
+h1 {
+    margin-left: 10px;
+}
+
+table {
+    margin-left: 10px;
+    /*border-collapse: collapse;*/
+    /*width: 100%;*/
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: center;
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Edytuj dane kursu</title>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
+    <h1>Edytuj dane kursu</h1>
+    <form action="/schedules/edit/{{ schedule.id }}/" method="post">
+        {% csrf_token %}
+        <label for="time">Termin</label>
+        <input type="datetime-local" name="time" id="time" value="{{ schedule.time|date:'Y-m-d\\TH:i'}}" required>
+        
+        <label for="origin">Miejsce początkowe</label>
+        <input type="text" name="origin" id="origin" value="{{ schedule.origin }}" required>
+        
+        <label for="destination">Miejsce docelowe</label>
+        <input type="text" name="destination" id="destination" value="{{ schedule.destination }}" required>
+        
+        <label for="frequency">Częstotliwość kursu</label>
+        <select name="frequency" id="frequency">
+            <option value="daily" {% if schedule.frequency == 'daily' %}selected{% endif %}>Codziennie</option>
+            <option value="weekly" {% if schedule.frequency == 'weekly' %}selected{% endif %}>Co tydzień</option>
+            <option value="monthly" {% if schedule.frequency == 'monthly' %}selected{% endif %}>Co miesiąc</option>
+            <option value="non-regular" {% if schedule.frequency == 'non-regular' %}selected{% endif %}>Nieregularnie</option>
+        </select>
+    
+        <button type="submit">Zapisz</button>
+    </form>
+    <a href="{% url 'passenger_list' %}">Powrót do listy pasażerów</a>
+
+</body>
+</html>

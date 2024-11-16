@@ -34,5 +34,8 @@ urlpatterns = [
     path('drivers/edit/<int:driver_id>/', views.driver_edit, name='driver_edit'),
     path('drivers/delete/<int:driver_id>/', views.driver_delete, name='driver_delete'),
     path('schedules/', views.schedule_list, name='schedule_list'),
+    path('schedules/add/', views.schedule_add, name='schedule_add'),
+    path('schedules/edit/<int:schedule_id>/', views.schedule_edit, name='schedule_edit'),
+    path('schedules/delete/<int:schedule_id>/', views.schedule_delete, name='schedule_delete'),
     path('trips/', views.trip_list, name='trip_list'),
 ]

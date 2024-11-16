@@ -2,10 +2,20 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
     <title>Lista pojazdów</title>
 </head>
 <body>
-    <a href="/">Strona główna</a>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
     <h1>Lista pojazdów</h1>
     <table>
         <thead>
@@ -29,10 +39,8 @@
                 <td>{{ vehicle.seats }}</td>
                 <td>{{ vehicle.review_date }}</td>
                 <td>{{ vehicle.notes }}</td>
-                <td>
-                    <a href="{% url 'vehicle_edit' vehicle.id %}">Edytuj</a>
-                    <a href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten pojazd?')">Usuń</a>
-                </td>
+                <td><a href="{% url 'vehicle_edit' vehicle.id %}">Edytuj</a></td>
+                <td><a href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten pojazd?')">Usuń</a></td>
             </tr>
             {% endfor %}
         </tbody>

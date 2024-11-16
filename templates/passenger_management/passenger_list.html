@@ -2,10 +2,20 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
     <title>Passenger List</title>
 </head>
 <body>
-    <a href="/">Strona główna</a>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
     <h1>Lista pasażerów</h1>
     <table>
         <tr>
@@ -20,11 +30,11 @@
             <td>{{ passenger.last_name }}</td>
             <td>{{ passenger.phone_number }}</td>
             <td>{{ passenger.email }}</td>
-            <td><a href="/passengers/edit/{{ passenger.id }}">Edytuj</a></td>
-            <td><a href="/passengers/delete/{{ passenger.id }}" onclick="return confirm('Czy na pewno chcesz usunąć tego pasażera?')">Usuń</a></td>
+            <td><a href="/passengers/edit/{{ passenger.id }}/">Edytuj</a></td>
+            <td><a href="/passengers/delete/{{ passenger.id }}/" onclick="return confirm('Czy na pewno chcesz usunąć tego pasażera?')">Usuń</a></td>
         </tr>
         {% endfor %}
     </table>
-<a href="/passengers/add">Nowy pasażer</a>
+<a href="/passengers/add/">Nowy pasażer</a>
 </body>
 </html>
