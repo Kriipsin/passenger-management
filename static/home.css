@@ -1,0 +1,29 @@
+/* Stylizacja paska nawigacyjnego */
+.navbar {
+    background-color: #aaa; /* Kolor tła */
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.navbar a {
+    color: black; /* Kolor tekstu */
+    padding: 14px 20px;
+    text-decoration: none;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+.navbar a:hover {
+    text-decoration: underline; /* Podkreślenie przy najechaniu */
+}
+
+.navbar .right {
+    margin-left: auto; /* Przesuwa element na prawo */
+}
+
+.logo {
+    width: 40px; /* Rozmiar ikony autobusu */
+    margin-right: 15px;
+}

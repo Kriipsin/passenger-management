@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Dodaj nowego pasażera</title>
+</head>
+<body>
+    <h1>Dodaj pasażera</h1>
+    <form action="{% url 'passenger_add' %}" method="post">
+        {% csrf_token %}
+        <label for="first_name">Imię</label>
+        <input type="text" name="first_name" id="first_name" required>
+
+        <label for="last_name">Nazwisko</label>
+        <input type="text" name="last_name" id="last_name">
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email">
+
+        <label for="phone_number">Telefon</label>
+        <input type="tel" name="phone_number" id="phone_number">
+
+        <button type="submit">Dodaj</button>
+    </form>
+    <a href="{% url 'passenger_list' %}">Lista pasażerów</a>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Kierowcy</title>
+</head>
+<body>
+
+    <a href="/">Strona główna</a>
+    <h1>Lista kierowców</h1>
+    <table>
+        <tr>
+            <th>Imię</th>
+            <th>Nazwisko</th>
+            <th>Telefon</th>
+            <th>Email</th>
+            <th>Aktywny</th>
+            <th>Numer prawa jazdy</th>
+            <th>Ważność prawa jazdy</th>
+            <th>Uwagi</th>
+        </tr>
+        {% for driver in drivers %}
+        <tr>
+            <td>{{ driver.first_name }}</td>
+            <td>{{ driver.last_name }}</td>
+            <td>{{ driver.phone_number }}</td>
+            <td>{{ driver.email }}</td>
+            <td>{{ driver.active }}</td>
+            <td>{{ driver.license_number }}</td>
+            <td>{{ driver.license_expiry }}</td>
+            <td>{{ driver.notes }}</td>
+            <td><a href="{% url 'driver_edit' driver.id %}">Edytuj</a></td>
+            <td><a href="{% url 'driver_delete' driver.id %}" onclick="return confirm('Czy na pewno chcesz usunąć tego kierowcę?')">Usuń</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/drivers/add">Dodaj kierowcę</a>
+
+</body>
+</html>

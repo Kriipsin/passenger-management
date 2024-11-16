@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edytuj dane pasażera</title>
+</head>
+<body>
+    <h1>Edytuj dane pasażera</h1>
+    <form action="{% url 'passenger_edit' passenger.id %}" method="post">
+        {% csrf_token %}
+        <label for="first_name">Imię</label>
+        <input type="text" name="first_name" id="first_name" value="{{ passenger.first_name }}" required>
+
+        <label for="last_name">Nazwisko</label>
+        <input type="text" name="last_name" id="last_name" value="{{ passenger.last_name }}">
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" value="{{ passenger.email }}">
+
+        <label for="phone_number">Telefon</label>
+        <input type="tel" name="phone_number" id="phone_number" value="{{ passenger.phone_number }}">
+
+        <button type="submit">Zapisz zmiany</button>
+    </form>
+    <a href="{% url 'passenger_list' %}">Powrót do listy pasażerów</a>
+
+</body>
+</html>

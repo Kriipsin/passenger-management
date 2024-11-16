@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Pasek Nawigacyjny</title>
+    {% load static %} <!-- Załaduj moduł static -->
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+</head>
+<body>
+    <div class="navbar">
+        <img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo">
+        <a href="/">Strona główna</a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
+    <p>Witaj na stronie głównej</p>
+</body>
+</html>

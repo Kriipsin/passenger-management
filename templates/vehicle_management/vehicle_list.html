@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista pojazdów</title>
+</head>
+<body>
+    <a href="/">Strona główna</a>
+    <h1>Lista pojazdów</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nr rejestracyjny</th>
+                <th>Marka</th>
+                <th>Model</th>
+                <th>Rok produkcji</th>
+                <th>Liczba miejsc</th>
+                <th>Data przeglądu</th>
+                <th>Uwagi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle in vehicles %}
+            <tr>
+                <td>{{ vehicle.license_plate }}</td>
+                <td>{{ vehicle.make }}</td>
+                <td>{{ vehicle.model }}</td>
+                <td>{{ vehicle.year }}</td>
+                <td>{{ vehicle.seats }}</td>
+                <td>{{ vehicle.review_date }}</td>
+                <td>{{ vehicle.notes }}</td>
+                <td>
+                    <a href="{% url 'vehicle_edit' vehicle.id %}">Edytuj</a>
+                    <a href="{% url 'vehicle_delete' vehicle.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten pojazd?')">Usuń</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'vehicle_add' %}">Dodaj nowy pojazd</a>
+
+</body>
+</html>

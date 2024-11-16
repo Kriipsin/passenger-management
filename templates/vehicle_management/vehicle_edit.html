@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edytuj pojazd</title>
+</head>
+
+<body>
+    <h1>Edytuj dane pojazdu</h1>
+    <form action="{% url 'vehicle_edit' vehicle.id %}" method="post">
+        {% csrf_token %}
+        <label for="license_plate">Numer rejestracyjny</label>
+        <input type="text" name="license_plate" id="license_plate" value="{{ vehicle.license_plate }}" required>
+
+        <label for="make">Marka</label>
+        <input type="text" name="make" id="make" value="{{ vehicle.make }}" required>
+
+        <label for="model">Model</label>
+        <input type="text" name="model" id="model" value="{{ vehicle.model }}" required>
+
+        <label for="year">Rok produkcji</label>
+        <input type="number" name="year" id="year" value="{{ vehicle.year }}" required>
+
+        <label for="seats">Liczba miejsc</label>
+        <input type="number" name="seats" id="seats" value="{{ vehicle.seats }}" required>
+
+        <label for="review_date">Data przeglądu</label>
+        <input type="date" name="review_date" id="review_date" value="{{ vehicle.review_date|date:'Y-m-d' }}">
+
+        <label for="notes">Uwagi</label>
+        <textarea name="notes" id="notes">{{ vehicle.notes }}</textarea>
+
+        <button type="submit">Zapisz</button>
+    </form>
+    <a href="{% url 'vehicle_list' %}">Powrót do listy pojazdów</a>
+
+</body>
+</html>

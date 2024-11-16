@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Nowy pojazd</title>
+</head>
+<body>
+    <h1>Nowy pojazd</h1>
+    <form action="{% url 'vehicle_add' %}" method="post">
+        {% csrf_token %}
+        <label for="license_plate">Numer rejestracyjny</label>
+        <input type="text" name="license_plate" id="license_plate" required>
+
+        <label for="make">Marka</label>
+        <input type="text" name="make" id="make" required>
+
+        <label for="model">Model</label>
+        <input type="text" name="model" id="model" required>
+
+        <label for="year">Rok produkcji</label>
+        <input type="number" name="year" id="year" required>
+
+        <label for="seats">Liczba miejsc</label>
+        <input type="number" name="seats" id="seats" required>
+
+        <label for="review_date">Data przeglądu</label>
+        <input type="date" name="review_date" id="review_date">
+
+        <label for="notes">Uwagi</label>
+        <textarea name="notes" id="notes"></textarea>
+
+        <button type="submit">Dodaj</button>
+    </form>
+    <a href="{% url 'vehicle_list' %}">Powrót do listy pojazdów</a>
+
+</body>
+</html>

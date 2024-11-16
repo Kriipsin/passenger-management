@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Passenger List</title>
+</head>
+<body>
+    <a href="/">Strona główna</a>
+    <h1>Lista pasażerów</h1>
+    <table>
+        <tr>
+            <th>Imię</th>
+            <th>Nazwisko</th>
+            <th>Numer telefonu</th>
+            <th>Email</th>
+        </tr>
+        {% for passenger in passengers %}
+        <tr>
+            <td>{{ passenger.first_name }}</td>
+            <td>{{ passenger.last_name }}</td>
+            <td>{{ passenger.phone_number }}</td>
+            <td>{{ passenger.email }}</td>
+            <td><a href="/passengers/edit/{{ passenger.id }}">Edytuj</a></td>
+            <td><a href="/passengers/delete/{{ passenger.id }}" onclick="return confirm('Czy na pewno chcesz usunąć tego pasażera?')">Usuń</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+<a href="/passengers/add">Nowy pasażer</a>
+</body>
+</html>
