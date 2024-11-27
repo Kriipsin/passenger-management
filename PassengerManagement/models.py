@@ -42,7 +42,7 @@ class Schedule(models.Model):
     frequency = models.CharField(max_length=50, choices=[("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"), ("not-regular", "Not regular")], default="daily")
 
     def __str__(self):
-        return self.time.strftime("%H:%M\n") + "\n" +self.origin + " - " + self.destination
+        return self.origin + " - " + self.destination
 
 class Trip(models.Model):
     date = models.DateField()

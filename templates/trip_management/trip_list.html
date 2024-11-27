@@ -22,11 +22,12 @@
     <table>
         <thead>
             <tr>
+                <th>Data kursu</th>
+                <th>Godzina kursu</th>
+                <th>Dzień tygodnia</th>
                 <th>Pojazd</th>
                 <th>Kierowca</th>
                 <th>Kurs</th>
-                <th>Data kursu</th>
-                <th>Godzina kursu</th>
                 <th>Liczba pasażerów</th>
                 <th>Status</th>
                 <th>Notatki</th>
@@ -35,11 +36,12 @@
         <tbody>
             {% for trip in trips %}
             <tr>
+                <td>{{ trip.date|date:"d-m-Y" }}</td>
+                <td>{{ trip.schedule.time|date:"H:i" }}</td>
+                <td>{{ trip.date|date:'l' }}</td>
                 <td>{{ trip.vehicle }}</td>
                 <td>{{ trip.driver }}</td>
                 <td>{{ trip.schedule }}</td>
-                <td>{{ trip.date|date:"d-m-Y" }}</td>
-                <td>{{ trip.schedule.time|date:"H:i" }}</td>
                 <td>{{ trip.passengers.count }}</td>
                 <td>{{ trip.status }}</td>
                 <td>{{ trip.notes }}</td>

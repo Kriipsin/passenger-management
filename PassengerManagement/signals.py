@@ -4,6 +4,7 @@ from .models import Schedule, Trip
 from .views import generate_dates
 from datetime import datetime
 
+
 @receiver(post_save, sender=Schedule)
 def handle_trips_for_schedule(sender, instance, created, **kwargs):
     """
@@ -23,7 +24,10 @@ def handle_trips_for_schedule(sender, instance, created, **kwargs):
         schedule_time = schedule.time
 
     # Generate trip dates based on frequency
-    trip_dates = generate_dates(schedule_time, schedule.frequency)
+    if schedule.frequency == "non-regular":
+        trip_dates = [schedule_time.date()]  # Single date for non-regular trips
+    else:
+        trip_dates = generate_dates(schedule_time, schedule.frequency)
 
     # Process trips for each generated date
     for trip_date in trip_dates:
@@ -32,12 +36,12 @@ def handle_trips_for_schedule(sender, instance, created, **kwargs):
             schedule=schedule,
             date=trip_date,  # Use trip_date directly
             defaults={
-                "notes": f"Trip on {trip_date} from {schedule.origin} to {schedule.destination}",
+                "notes": f"Kurs {trip_date}: {schedule.origin}-{schedule.destination}",
             },
         )
         if not trip_created:
             # If the trip already exists, update its notes if necessary
-            trip.notes = f"Updated trip on {trip_date} from {schedule.origin} to {schedule.destination}"
+            trip.notes = f"Zaktualizowany kurs {trip_date}: {schedule.origin} to {schedule.destination}"
             trip.save()
 
         existing_trip_dates.add(trip_date)
