@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Nowy pojazd</title>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
+    <h1>Nowy kurs</h1>
+    <form action="{% url 'schedule_add' %}" method="post">
+        {% csrf_token %}
+        <label for="time">Termin</label>
+        <input type="datetime-local" name="time" id="time" required>
+
+        <label for="origin">Miejsce początkowe</label>
+        <input type="text" name="origin" id="origin" required>
+
+        <label for="destination">Miejsce docelowe</label>
+        <input type="text" name="destination" id="destination" required>
+
+        <label for="frequency">Częstotliwość kursu</label>
+        <select name="frequency" id="frequency">
+            <option value="daily">Codziennie</option>
+            <option value="weekly">Co tydzień</option>
+            <option value="monthly">Co miesiąc</option>
+            <option value="non-regular">Nieregularnie</option>
+        </select>
+
+        <button type="submit">Dodaj</button>
+    </form>
+    <a href="{% url 'schedule_list' %}">Powrót do listy kursów</a>
+
+</body>
+</html>

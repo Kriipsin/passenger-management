@@ -38,4 +38,8 @@ urlpatterns = [
     path('schedules/edit/<int:schedule_id>/', views.schedule_edit, name='schedule_edit'),
     path('schedules/delete/<int:schedule_id>/', views.schedule_delete, name='schedule_delete'),
     path('trips/', views.trip_list, name='trip_list'),
+    path('trips/add/', views.trip_add, name='trip_add'),
+    path('trips/edit/<int:trip_id>/', views.trip_edit, name='trip_edit'),
+    path('trips/delete/<int:trip_id>/', views.trip_delete, name='trip_delete'),
+    path('trips/assign/<int:trip_id>/', views.trip_assign, name='trip_assign'),
 ]

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Przypisz zasoby do przejazdu</title>
+    <script>
+        function filterPassengers() {
+            let input = document.getElementById("passengerSearch").value.toUpperCase();
+            let table = document.getElementById("passengerTable");
+            let rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) {
+                let cols = rows[i].getElementsByTagName("td");
+                let match = false;
+                for (let j = 0; j < cols.length; j++) {
+                    if (cols[j].innerText.toUpperCase().includes(input)) {
+                        match = true;
+                        break;
+                    }
+                }
+                rows[i].style.display = match ? "" : "none";
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+    </div>
+
+    <h1>Przypisz zasoby do przejazdu</h1>
+
+    <form method="post" action="{% url 'trip_assign' trip.id %}">
+        {% csrf_token %}
+
+        <h2>Informacje o kursie:</h2>
+        <p><strong>Miejsce początkowe:</strong> {{ trip.schedule.origin }}</p>
+        <p><strong>Miejsce docelowe:</strong> {{ trip.schedule.destination }}</p>
+        <p><strong>Godzina odjazdu:</strong> {{ trip.schedule.time|date:"d-m-Y H:i" }}</p>
+
+        <h2>Przypisz pojazd</h2>
+        <select name="vehicle_id" required>
+            <option value="">Wybierz pojazd</option>
+            {% for vehicle in vehicles %}
+            <option value="{{ vehicle.id }}" {% if trip.vehicle and trip.vehicle.id == vehicle.id %}selected{% endif %}>
+                {{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.license_plate }})
+            </option>
+            {% endfor %}
+        </select>
+
+        <h2>Przypisz kierowcę</h2>
+        <select name="driver_id" required>
+            <option value="">Wybierz kierowcę</option>
+            {% for driver in drivers %}
+            <option value="{{ driver.id }}" {% if trip.driver and trip.driver.id == driver.id %}selected{% endif %}>
+                {{ driver.first_name }} {{ driver.last_name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <h2>Dodaj pasażerów</h2>
+        <input type="text" id="passengerSearch" placeholder="Wyszukaj pasażera..." onkeyup="filterPassengers()">
+
+        <table id="passengerTable" border="1">
+            <thead>
+                <tr>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Telefon</th>
+                    <th>Email</th>
+                    <th>Zaznacz</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for passenger in passengers %}
+                <tr>
+                    <td>{{ passenger.first_name }}</td>
+                    <td>{{ passenger.last_name }}</td>
+                    <td>{{ passenger.phone_number }}</td>
+                    <td>{{ passenger.email }}</td>
+                    <td><label>
+                        <input type="checkbox" name="passengers" value="{{ passenger.id }}" 
+                            {% if passenger in trip.passengers.all %}checked{% endif %}>
+                    </label></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Notatki</h2>
+        <textarea name="notes" rows="4" cols="50" placeholder="Dodaj notatki dotyczące tego przejazdu...">{{ trip.notes }}</textarea>
+    
+      <label for="status">Status:</label>
+        <select name="status" id="status">
+            <option value="planned" {% if trip.status == 'planned' %}selected{% endif %}>Planowany</option>
+            <option value="completed" {% if trip.status == 'completed' %}selected{% endif %}>Zrealizowany</option>
+            <option value="cancelled" {% if trip.status == 'cancelled' %}selected{% endif %}>Anulowany</option>
+        </select>
+
+        <button type="submit">Zapisz</button>
+    </form>
+
+    <a href="{% url 'trip_list' %}">Powrót do listy przejazdów</a>
+</body>
+</html>

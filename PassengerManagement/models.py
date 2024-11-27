@@ -42,15 +42,25 @@ class Schedule(models.Model):
     frequency = models.CharField(max_length=50, choices=[("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"), ("not-regular", "Not regular")], default="daily")
 
     def __str__(self):
-        return self.origin + " to " + self.destination + " at " + self.time.strftime("%Y-%m-%d %H:%M")
+        return self.time.strftime("%H:%M\n") + "\n" +self.origin + " - " + self.destination
 
 class Trip(models.Model):
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
-    driver = models.ForeignKey(Driver, on_delete=models.CASCADE)
-    passengers = models.ManyToManyField(Passenger)
+    date = models.DateField()
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
-    notes = models.TextField()
-    status = models.CharField(max_length=50, choices=[("scheduled", "Scheduled"), ("in-progress", "In progress"), ("completed", "Completed"), ("cancelled", "Cancelled")], default="scheduled")
+    vehicle = models.ForeignKey('Vehicle', on_delete=models.SET_NULL, null=True, blank=True)
+    driver = models.ForeignKey('Driver', on_delete=models.SET_NULL, null=True, blank=True)
+    passengers = models.ManyToManyField('Passenger')
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ('planned', 'Planned'),
+            ('in_progress', 'In Progress'),
+            ('completed', 'Completed'),
+            ('cancelled', 'Cancelled'),
+        ],
+        default='planned',
+    )
+    notes = models.TextField(blank=True)
 
     def __str__(self):
-        return self.vehicle.make + " " + self.vehicle.model + " (" + self.vehicle.license_plate + ") on " + self.schedule.time.strftime("%Y-%m-%d %H:%M") + " to " + self.schedule.destination
+        return f"Trip from {self.schedule.origin} to {self.schedule.destination}"

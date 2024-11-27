@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Lista przejazdów</title>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
+        <a href="/passengers">Pasażerowie</a>
+        <a href="/vehicles">Pojazdy</a>
+        <a href="/drivers">Kierowcy</a>
+        <a href="/schedules">Kursy</a>
+        <a href="/trips">Lista przejazdów</a>
+        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    </div>
+    <h1>Lista kursów</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Pojazd</th>
+                <th>Kierowca</th>
+                <th>Kurs</th>
+                <th>Data kursu</th>
+                <th>Godzina kursu</th>
+                <th>Liczba pasażerów</th>
+                <th>Status</th>
+                <th>Notatki</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trip in trips %}
+            <tr>
+                <td>{{ trip.vehicle }}</td>
+                <td>{{ trip.driver }}</td>
+                <td>{{ trip.schedule }}</td>
+                <td>{{ trip.date|date:"d-m-Y" }}</td>
+                <td>{{ trip.schedule.time|date:"H:i" }}</td>
+                <td>{{ trip.passengers.count }}</td>
+                <td>{{ trip.status }}</td>
+                <td>{{ trip.notes }}</td>
+                <td><a href="{% url 'trip_assign' trip.id %}">Przypisz zasoby</a></td>
+                <td><a href="{% url 'trip_edit' trip.id %}">Edytuj</a></td>
+                <td><a href="{% url 'trip_delete' trip.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten przejazd?')">Usuń</a></td>
+            </tr>
+            {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'trip_add' %}">Dodaj nowy przejazd</a>
+
+</body>
+</html>

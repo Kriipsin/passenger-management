@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Passenger, Vehicle, Driver, Schedule, Trip
+from datetime import timedelta, datetime
 
 # Create your views here.
 def home(request):
@@ -190,6 +191,118 @@ def schedule_delete(request, schedule_id):
     return redirect('schedule_list')
 
 def trip_list(request):
-    trips = Trip.objects.all()
-    return render(request, 'trip_list.html', {'trips': trips})
+    trips = Trip.objects.all().order_by('date')  # Sortowanie według daty
+    return render(request, 'trip_management/trip_list.html', {'trips': trips})
+
+def trip_add(request):
+    if request.method == 'POST':
+        schedule_id = request.POST.get('schedule_id')
+        driver_id = request.POST.get('driver_id')
+        vehicle_id = request.POST.get('vehicle_id')
+        passengers = request.POST.getlist('passengers')
+
+        schedule = Schedule.objects.get(id=schedule_id)
+        driver = Driver.objects.get(id=driver_id)
+        vehicle = Vehicle.objects.get(id=vehicle_id)
+
+        dates = generate_dates(schedule.time, schedule.frequency)
+        for trip_date in dates:
+            Trip.objects.create(
+                schedule=schedule,
+                date=trip_date,
+                driver=driver,
+                vehicle=vehicle,
+                notes=f"Trip on {trip_date} from {schedule.origin} to {schedule.destination}"
+            )
+
+        return redirect('trip_list')
+    schedules = Schedule.objects.all()
+    drivers = Driver.objects.all()
+    vehicles = Vehicle.objects.all()
+    return render(request, 'trip_management/trip_add.html', {'schedules': schedules, 'drivers': drivers, 'vehicles': vehicles})
+
+def trip_edit(request, trip_id):
+    trip = get_object_or_404(Trip, id=trip_id)
+
+    if request.method == 'POST':
+        date = request.POST.get('date')
+        driver_id = request.POST.get('driver_id')
+        vehicle_id = request.POST.get('vehicle_id')
+        passengers = request.POST.getlist('passengers')
+        status = request.POST.get('status')
+        notes = request.POST.get('notes')
+
+        trip.date = date
+        trip.driver = Driver.objects.get(id=driver_id)
+        trip.vehicle = Vehicle.objects.get(id=vehicle_id)
+        trip.passengers.set(passengers)
+        trip.status = status
+        trip.notes = notes
+        trip.save()
+
+        return redirect('trip_list')
+
+    drivers = Driver.objects.all()
+    vehicles = Vehicle.objects.all()
+    passengers = Passenger.objects.all()
+    return render(request, 'trip_management/trip_edit.html', {
+        'trip': trip,
+        'drivers': drivers,
+        'vehicles': vehicles,
+        'passengers': passengers
+    })
+
+def trip_delete(request, trip_id):
+    trip = get_object_or_404(Trip, id=trip_id)
+    trip.delete()
+    return redirect('trip_list')
+
+def trip_assign(request, trip_id):
+    trip = get_object_or_404(Trip, id=trip_id)
+
+    if request.method == 'POST':
+        driver_id = request.POST.get('driver_id')
+        vehicle_id = request.POST.get('vehicle_id')
+        passenger_ids = request.POST.getlist('passengers')
+        status = request.POST.get('status')
+        notes = request.POST.get('notes')
+
+        trip.driver = Driver.objects.get(id=driver_id)
+        trip.vehicle = Vehicle.objects.get(id=vehicle_id)
+        trip.passengers.set(passenger_ids)
+        trip.status = status
+        trip.notes = notes
+        trip.save()
+
+        return redirect('trip_list')
+
+    drivers = Driver.objects.all()
+    vehicles = Vehicle.objects.all()
+    passengers = Passenger.objects.all()
+
+    return render(request, 'trip_management/trip_assign.html', {
+        'trip': trip,
+        'drivers': drivers,
+        'vehicles': vehicles,
+        'passengers': passengers,
+    })
+
+def generate_dates(start_time, frequency):
+    if isinstance(start_time, str):
+        start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M')  # Format datetime-local
+
+    start_date = start_time.date()
+
+    dates = []
+    if frequency == "daily":
+        dates = [start_date + timedelta(days=i) for i in range(7)]  # 7 dni
+    elif frequency == "weekly":
+        dates = [start_date + timedelta(weeks=i) for i in range(4)]  # 4 tygodnie
+    elif frequency == "monthly":
+        dates = [start_date + timedelta(days=30 * i) for i in range(3)]  # 3 miesiące
+    elif frequency == "not-regular":
+        dates = [start_date]
+    return dates
+
+
 
