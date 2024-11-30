@@ -7,15 +7,9 @@
     <title>Nowy pojazd</title>
 </head>
 <body>
-    <div class="navbar">
-        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
-        <a href="/passengers">Pasażerowie</a>
-        <a href="/vehicles">Pojazdy</a>
-        <a href="/drivers">Kierowcy</a>
-        <a href="/schedules">Kursy</a>
-        <a href="/trips">Lista przejazdów</a>
-        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
-    </div>
+
+    {% include 'partials/navbar.html' %}
+
     <h1>Nowy kurs</h1>
     <form action="{% url 'schedule_add' %}" method="post">
         {% csrf_token %}
@@ -33,7 +27,7 @@
             <option value="daily">Codziennie</option>
             <option value="weekly">Co tydzień</option>
             <option value="monthly">Co miesiąc</option>
-            <option value="non-regular">Nieregularnie</option>
+            <option value="non-regular" selected>Nieregularnie</option>
         </select>
 
         <button type="submit">Dodaj</button>

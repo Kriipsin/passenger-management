@@ -42,4 +42,8 @@ urlpatterns = [
     path('trips/edit/<int:trip_id>/', views.trip_edit, name='trip_edit'),
     path('trips/delete/<int:trip_id>/', views.trip_delete, name='trip_delete'),
     path('trips/assign/<int:trip_id>/', views.trip_assign, name='trip_assign'),
+    path('new_reservation/', views.new_reservation, name='new_reservation'),
+    path('trips/<int:trip_id>/reservations/', views.trip_reservations, name='reservation_list'),
+    path('trips/<int:trip_id>/reserved_passengers/', views.get_reserved_passengers, name='reserved_passengers'),
+    path('get_trips_by_date/', views.get_trips_by_date, name='get_trips_by_date'),
 ]

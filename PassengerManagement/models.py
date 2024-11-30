@@ -64,3 +64,21 @@ class Trip(models.Model):
 
     def __str__(self):
         return f"Trip from {self.schedule.origin} to {self.schedule.destination}"
+
+
+from django.db import models
+
+class Reservation(models.Model):
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='reservations')
+    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)
+    seats = models.PositiveIntegerField(default=1)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('trip', 'passenger')
+
+    def __str__(self):
+        return f"{self.passenger} - {self.trip} ({self.seats} seats)"
+
+
+

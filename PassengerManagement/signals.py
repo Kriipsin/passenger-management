@@ -1,9 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Schedule, Trip
+from .models import Schedule, Trip, Reservation
 from .views import generate_dates
 from datetime import datetime
-
+from .views import update_trip_statuses
 
 @receiver(post_save, sender=Schedule)
 def handle_trips_for_schedule(sender, instance, created, **kwargs):

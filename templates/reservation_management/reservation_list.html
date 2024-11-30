@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Lista rezerwacji</title>
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+
+    <div class="container">
+        <h1>Rezerwacje dla kursu {{ trip }}</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Imię i nazwisko pasażera</th>
+                    <th>Numer telefonu</th>
+                    <th>Email</th>
+                    <th>Liczba miejsc</th>
+                    <th>Uwagi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.passenger.first_name }} {{ reservation.passenger.last_name }}</td>
+                    <td>{{ reservation.passenger.phone_number }}</td>
+                    <td>{{ reservation.passenger.email }}</td>
+                    <td>{{ reservation.seats }}</td>
+                    <td>{{ reservation.notes }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{% url 'trip_list' %}">Powrót do listy kursów</a>
+    </div>
+</body>
+</html>

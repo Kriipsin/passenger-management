@@ -1,6 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Passenger, Vehicle, Driver, Schedule, Trip
+from .models import Passenger, Vehicle, Driver, Schedule, Trip, Reservation
 from datetime import timedelta, datetime
+from django.utils.timezone import now, make_aware
+from django.http import JsonResponse
+from django.db.models import Sum, F, Q
+
 
 # Create your views here.
 def home(request):
@@ -191,8 +195,9 @@ def schedule_delete(request, schedule_id):
     return redirect('schedule_list')
 
 def trip_list(request):
-    trips = Trip.objects.all().order_by('date')  # Sortowanie według daty
+    trips = Trip.objects.annotate(aggregate_seats=Sum('reservations__seats')).order_by('date')
     return render(request, 'trip_management/trip_list.html', {'trips': trips})
+
 
 def trip_add(request):
     if request.method == 'POST':
@@ -264,28 +269,116 @@ def trip_assign(request, trip_id):
         driver_id = request.POST.get('driver_id')
         vehicle_id = request.POST.get('vehicle_id')
         passenger_ids = request.POST.getlist('passengers')
+        seats_list = request.POST.getlist('seats')  # Pobieramy liczbę miejsc
+
         status = request.POST.get('status')
         notes = request.POST.get('notes')
 
-        trip.driver = Driver.objects.get(id=driver_id)
-        trip.vehicle = Vehicle.objects.get(id=vehicle_id)
-        trip.passengers.set(passenger_ids)
+        trip.driver = Driver.objects.get(id=driver_id) if driver_id else None
+        trip.vehicle = Vehicle.objects.get(id=vehicle_id) if vehicle_id else None
         trip.status = status
         trip.notes = notes
         trip.save()
+
+        # Aktualizujemy rezerwacje
+        for passenger_id, seats in zip(passenger_ids, seats_list):
+            passenger = Passenger.objects.get(id=passenger_id)
+            seats = int(seats)
+            # Tworzymy tyle rezerwacji, ile wskazano miejsc
+            Reservation.objects.filter(trip=trip, passenger=passenger).delete()
+            Reservation.objects.create(trip=trip, passenger=passenger, seats=seats)
 
         return redirect('trip_list')
 
     drivers = Driver.objects.all()
     vehicles = Vehicle.objects.all()
     passengers = Passenger.objects.all()
+    reservations = Reservation.objects.filter(trip=trip)
 
     return render(request, 'trip_management/trip_assign.html', {
         'trip': trip,
         'drivers': drivers,
         'vehicles': vehicles,
         'passengers': passengers,
+        'reservations': reservations,
     })
+
+
+def new_reservation(request):
+
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        seats = int(request.POST.get('seats'))
+        trip_id = request.POST.get('route')
+        notes = request.POST.get('notes')
+
+        # Znajdź lub utwórz pasażera
+        passenger, created = Passenger.objects.get_or_create(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone_number=phone_number,
+        )
+
+        # Utwórz rezerwację
+        trip = Trip.objects.get(id=trip_id)
+        Reservation.objects.create(
+            trip=trip,
+            passenger=passenger,
+            seats=seats,
+            notes=notes,
+        )
+
+        return redirect('trip_list')
+
+    available_trips = Trip.objects.filter(status='planned').order_by('date', 'schedule__time')
+    return render(request, 'reservation_management/new_reservation.html', {'available_trips': available_trips})
+
+
+
+def trip_reservations(request, trip_id):
+    trip = get_object_or_404(Trip, id=trip_id)
+    reservations = Reservation.objects.filter(trip=trip)
+
+    return render(request, 'reservation_management/reservation_list.html', {
+        'trip': trip,
+        'reservations': reservations,
+    })
+
+
+def get_trips_by_date(request):
+    date = request.GET.get('date')
+    trips = Trip.objects.filter(date=date, status="planned").order_by('schedule__time').values('id', 'schedule__origin', 'schedule__destination', 'schedule__time')
+    return JsonResponse(list(trips), safe=False)
+
+def get_reserved_passengers(request, trip_id):
+    trip = Trip.objects.get(id=trip_id)
+    reserved_passenger_ids = trip.reservations.order_by("passenger__first_name").values_list('passenger_id', flat=True)
+    return JsonResponse({'reserved_passenger_ids': list(reserved_passenger_ids)})
+
+
+def update_trip_statuses():
+    current_time = now()
+
+    # Update completed trips (dates in the past)
+    Trip.objects.filter(date__lt=current_time.date()).update(status="completed")
+
+    # Update trips in progress (within 3 hours from now)
+    three_hours_later = current_time + timedelta(hours=3)
+
+    Trip.objects.filter(
+        Q(date=current_time.date()) &
+        Q(schedule__time__gte=current_time.time()) &
+        Q(schedule__time__lte=three_hours_later.time())
+    ).update(status="in_progress")
+
+    # Update future trips to "planned"
+    Trip.objects.filter(date__gt=current_time.date()).update(status="planned")
+
+
 
 def generate_dates(start_time, frequency):
     if isinstance(start_time, str):

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'home.css' %}">
+    <title>Nowa rezerwacja</title>
+    <script>
+        function updateRoutes() {
+            const selectedDate = document.getElementById('date').value;
+
+            if (selectedDate) {
+                fetch(`/get_trips_by_date/?date=${selectedDate}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const routeSelect = document.getElementById('route');
+                        routeSelect.innerHTML = '<option value="" disabled selected>Wybierz trasę...</option>';
+                        data.forEach(trip => {
+                            const option = document.createElement('option');
+                            option.value = trip.id;
+                            option.textContent = `${trip.schedule__origin} - ${trip.schedule__destination} (${trip.schedule__time.slice(11, 16)})`;
+                            routeSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error(error));
+            }
+        }
+
+        document.getElementById('date').addEventListener('change', updateRoutes);
+    </script>
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+    <div class="container">
+        <h1>Nowa rezerwacja</h1>
+        <form method="post" action="{% url 'new_reservation' %}">
+            {% csrf_token %}
+            <div class="reservation-section">
+                <h2>Dane pasażera</h2>
+                <label for="first_name">Imię</label>
+                <input type="text" name="first_name" id="first_name" required>
+                <label for="last_name">Nazwisko</label>
+                <input type="text" name="last_name" id="last_name" required>
+                <label for="phone_number">Numer telefonu (opcjonalnie)</label>
+                <input type="text" name="phone_number" id="phone_number">
+                <label for="email">Adres email (opcjonalnie)</label>
+                <input type="email" name="email" id="email">
+                <label for="seats">Liczba miejsc</label>
+                <input type="number" name="seats" id="seats" min="1" value="1" required>
+            </div>
+
+            <div class="reservation-section">
+                <h2>Dane trasy</h2>
+                <label for="date">Dzień</label>
+                <input type="date" name="date" id="date" required onchange="updateRoutes()">
+                <label for="route">Trasa</label>
+                <select name="route" id="route" required>
+                    <option value="" disabled selected>Wybierz trasę...</option>
+                </select>
+                <label for="notes">Uwagi dotyczące przejazdu (opcjonalnie)</label>
+                <input type="text" name="notes" id="notes">
+            </div>
+            <button type="submit" class="btn">Dodaj pasażera</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -23,17 +23,40 @@
                 rows[i].style.display = match ? "" : "none";
             }
         }
+
+        function updatePassengerSelection() {
+            const tripId = {{ trip.id }}; // ID aktualnego przejazdu
+            fetch(`/trips/${tripId}/reserved_passengers/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Błąd podczas pobierania danych rezerwacji.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const reservedPassengerIds = data.reserved_passenger_ids;
+
+                    // Przeiteruj przez wszystkie checkboxy pasażerów
+                    const checkboxes = document.querySelectorAll('input[name="passengers"]');
+                    checkboxes.forEach(checkbox => {
+                        if (reservedPassengerIds.includes(parseInt(checkbox.value))) {
+                            checkbox.checked = true; // Zaznacz pasażera
+                        } else {
+                            checkbox.checked = false; // Odznacz pasażera
+                        }
+                    });
+                })
+                .catch(error => console.error(error));
+        }
+
+        document.addEventListener('DOMContentLoaded', updatePassengerSelection);
+        save_passengers = document.querySelector('.save_passengers');
+        save_passengers.addEventListener('click', updatePassengerSelection);
     </script>
 </head>
 <body>
-    <div class="navbar">
-        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
-        <a href="/passengers">Pasażerowie</a>
-        <a href="/vehicles">Pojazdy</a>
-        <a href="/drivers">Kierowcy</a>
-        <a href="/schedules">Kursy</a>
-        <a href="/trips">Lista przejazdów</a>
-    </div>
+
+    {% include 'partials/navbar.html' %}
 
     <h1>Przypisz zasoby do przejazdu</h1>
 
@@ -65,6 +88,26 @@
             {% endfor %}
         </select>
 
+        <h2>Lista rezerwacji</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Imię</th>
+                    <th>Nazwisko</th>
+                    <th>Liczba miejsc</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.passenger.first_name }}</td>
+                    <td>{{ reservation.passenger.last_name }}</td>
+                    <td>{{ reservation.seats }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <h2>Dodaj pasażerów</h2>
         <input type="text" id="passengerSearch" placeholder="Wyszukaj pasażera..." onkeyup="filterPassengers()">
 
@@ -76,6 +119,7 @@
                     <th>Telefon</th>
                     <th>Email</th>
                     <th>Zaznacz</th>
+                    <th>Liczba miejsc</th>
                 </tr>
             </thead>
             <tbody>
@@ -85,14 +129,23 @@
                     <td>{{ passenger.last_name }}</td>
                     <td>{{ passenger.phone_number }}</td>
                     <td>{{ passenger.email }}</td>
-                    <td><label>
-                        <input type="checkbox" name="passengers" value="{{ passenger.id }}" 
-                            {% if passenger in trip.passengers.all %}checked{% endif %}>
-                    </label></td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="passengers" value="{{ passenger.id }}"
+                                {% if passenger.id in passenger_reservations %}checked{% endif %}>
+                        </label>
+                    </td>
+                    <td>
+                        <input type="number" name="seats" value="{% if passenger.id in passenger_reservations %}{{ passenger_reservations|default:'' }}{% else %}1{% endif %}" min="1" max="20">
+                    </td>
+
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+
+        <button class="save_passengers">Zapisz</button>
 
         <h2>Notatki</h2>
         <textarea name="notes" rows="4" cols="50" placeholder="Dodaj notatki dotyczące tego przejazdu...">{{ trip.notes }}</textarea>
