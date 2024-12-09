@@ -48,3 +48,18 @@ def handle_trips_for_schedule(sender, instance, created, **kwargs):
 
     # Remove trips that no longer match the updated schedule
     Trip.objects.filter(schedule=schedule).exclude(date__in=existing_trip_dates).delete()
+
+
+@receiver(post_save, sender=Schedule)
+def schedule_saved(sender, instance, **kwargs):
+    update_trip_statuses()
+
+
+@receiver(post_save, sender=Trip)
+def trip_saved(sender, instance, **kwargs):
+    update_trip_statuses()
+
+
+@receiver(post_save, sender=Reservation)
+def reservation_saved(sender, instance, **kwargs):
+    update_trip_statuses()

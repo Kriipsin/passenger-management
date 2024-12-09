@@ -26,41 +26,110 @@
             }
         }
 
-        document.getElementById('date').addEventListener('change', updateRoutes);
+        function setTodayDate() {
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function togglePaymentFields() {
+            const paymentFields = document.getElementById('payment-fields');
+            const paymentStatus = document.getElementById('payment_status').value;
+
+            if (paymentStatus === 'paid') {
+                paymentFields.style.display = 'block';
+                document.getElementById('payment_amount').required = true;
+                document.getElementById('payment_currency').required = true;
+                document.getElementById('payment_method').required = true;
+            } else {
+                paymentFields.style.display = 'none';
+                document.getElementById('payment_amount').required = false;
+                document.getElementById('payment_currency').required = false;
+                document.getElementById('payment_method').required = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTodayDate();
+            updateRoutes();
+            togglePaymentFields(); // Ustaw początkowy stan pól płatności
+
+            document.getElementById('date').addEventListener('change', updateRoutes);
+            document.getElementById('payment_status').addEventListener('change', togglePaymentFields);
+        });
     </script>
 </head>
 <body>
     {% include 'partials/navbar.html' %}
+
     <div class="container">
         <h1>Nowa rezerwacja</h1>
         <form method="post" action="{% url 'new_reservation' %}">
             {% csrf_token %}
+
+            <!-- Sekcja danych pasażera -->
             <div class="reservation-section">
                 <h2>Dane pasażera</h2>
                 <label for="first_name">Imię</label>
                 <input type="text" name="first_name" id="first_name" required>
+
                 <label for="last_name">Nazwisko</label>
                 <input type="text" name="last_name" id="last_name" required>
+
                 <label for="phone_number">Numer telefonu (opcjonalnie)</label>
                 <input type="text" name="phone_number" id="phone_number">
+
                 <label for="email">Adres email (opcjonalnie)</label>
                 <input type="email" name="email" id="email">
+
                 <label for="seats">Liczba miejsc</label>
                 <input type="number" name="seats" id="seats" min="1" value="1" required>
             </div>
 
+            <!-- Sekcja danych trasy -->
             <div class="reservation-section">
                 <h2>Dane trasy</h2>
                 <label for="date">Dzień</label>
-                <input type="date" name="date" id="date" required onchange="updateRoutes()">
+                <input type="date" name="date" id="date" required>
+
                 <label for="route">Trasa</label>
                 <select name="route" id="route" required>
                     <option value="" disabled selected>Wybierz trasę...</option>
                 </select>
+
                 <label for="notes">Uwagi dotyczące przejazdu (opcjonalnie)</label>
-                <input type="text" name="notes" id="notes">
+                <textarea name="notes" id="notes" rows="3"></textarea>
             </div>
-            <button type="submit" class="btn">Dodaj pasażera</button>
+
+            <!-- Sekcja płatności -->
+            <div class="reservation-section">
+                <h2>Płatność</h2>
+                <label for="payment_status">Status płatności</label>
+                <select name="payment_status" id="payment_status" required>
+                    <option value="not-paid" selected>Nieopłacone</option>
+                    <option value="paid">Opłacone</option>
+                </select>
+
+                <div id="payment-fields" style="display: none;">
+                    <label for="payment_amount">Kwota płatności</label>
+                    <input type="number" name="payment_amount" id="payment_amount" step="0.01" min="0" max="1000">
+
+                    <label for="payment_currency">Waluta</label>
+                    <select name="payment_currency" id="payment_currency">
+                        <option value="PLN" selected>PLN</option>
+                        <option value="EUR">€</option>
+                    </select>
+
+                    <label for="payment_method">Metoda płatności</label>
+                    <select name="payment_method" id="payment_method">
+                        <option value="online" selected>Płatność online</option>
+                        <option value="bank_transfer_office">Przelew online w biurze (BLIK)</option>
+                        <option value="bank_transfer_driver">Przelew online u kierowcy (BLIK)</option>
+                        <option value="cash_office">Gotówka w biurze</option>
+                        <option value="cash_driver">Gotówka u kierowcy</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Dodaj rezerwację</button>
         </form>
     </div>
 </body>

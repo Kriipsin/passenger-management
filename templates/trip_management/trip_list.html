@@ -35,7 +35,7 @@
                 <td>{{ trip.vehicle|default:"Brak pojazdu" }}</td>
                 <td>{{ trip.driver|default:"Brak kierowcy" }}</td>
                 <td>{{ trip.schedule }}</td>
-                <td>{{ trip.aggregate_seats|default_if_none:"0" }}</td>
+                <td>{{ trip.total_passengers|default:0 }}</td>
                 <td>{{ trip.status }}</td>
                 <td>{{ trip.notes|default:"-" }}</td>
                 <td><a href="{% url 'trip_assign' trip.id %}">Przypisz zasoby</a></td>

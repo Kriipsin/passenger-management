@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     {% load static %}
+    {% load custom_filters %}
     <link rel="stylesheet" href="{% static 'home.css' %}">
     <title>Przypisz zasoby do przejazdu</title>
     <script>
@@ -24,34 +25,51 @@
             }
         }
 
-        function updatePassengerSelection() {
-            const tripId = {{ trip.id }}; // ID aktualnego przejazdu
-            fetch(`/trips/${tripId}/reserved_passengers/`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Błąd podczas pobierania danych rezerwacji.');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const reservedPassengerIds = data.reserved_passenger_ids;
+        function togglePaymentFields(selectElement) {
+            const row = selectElement.closest('tr');
+            const paymentFields = row.querySelectorAll('.payment-field input, .payment-field select');
 
-                    // Przeiteruj przez wszystkie checkboxy pasażerów
-                    const checkboxes = document.querySelectorAll('input[name="passengers"]');
-                    checkboxes.forEach(checkbox => {
-                        if (reservedPassengerIds.includes(parseInt(checkbox.value))) {
-                            checkbox.checked = true; // Zaznacz pasażera
-                        } else {
-                            checkbox.checked = false; // Odznacz pasażera
-                        }
-                    });
-                })
-                .catch(error => console.error(error));
+            if (selectElement.value === 'paid') {
+                paymentFields.forEach(field => field.disabled = false);
+            } else {
+                paymentFields.forEach(field => field.disabled = true);
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', updatePassengerSelection);
-        save_passengers = document.querySelector('.save_passengers');
-        save_passengers.addEventListener('click', updatePassengerSelection);
+        {#window.passengerReservations = JSON.parse('{{ passenger_reservations|safe|escapejs }}');#}
+
+        {#function updatePaymentAmounts() {#}
+        {#    // Pobierz wszystkie rzędy tabeli pasażerów#}
+        {#    const rows = document.querySelectorAll("#passengerTable tbody tr");#}
+        {##}
+        {#    rows.forEach(row => {#}
+        {#        const passengerId = row.querySelector('input[name="passengers"]').value; // Pobierz ID pasażera#}
+        {#        const paymentAmountInput = row.querySelector('input[name="payment_amount"]'); // Pobierz pole payment_amount#}
+        {#        const paymentStatus = row.querySelector('select[name="payment_status"]').value; // Pobierz status płatności#}
+        {##}
+        {#        // Pobierz dane dla pasażera z `passenger_reservations`#}
+        {#        const passengerData = window.passengerReservations[passengerId]; // Globalne dane z Python#}
+        {##}
+        {#        if (passengerData && passengerData.payment_status === 'paid') {#}
+        {#            paymentAmountInput.value = passengerData.payment_amount || 0.00; // Ustaw wartość payment_amount#}
+        {#            paymentAmountInput.disabled = false; // Odblokuj pole, jeśli płatność została dokonana#}
+        {#        } else {#}
+        {#            paymentAmountInput.value = 0.00; // Ustaw domyślną wartość, jeśli nieopłacone#}
+        {#            paymentAmountInput.disabled = true; // Zablokuj pole, jeśli płatność nie została dokonana#}
+        {#        }#}
+        {#    });#}
+        {#}#}
+
+        {#console.log(window.passengerReservations);#}
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.payment-status').forEach(selectElement => {
+                togglePaymentFields(selectElement);
+                selectElement.addEventListener('change', () => togglePaymentFields(selectElement));
+            });
+            // Zaktualizuj kwoty płatności po załadowaniu strony
+            {#updatePaymentAmounts();#}
+        });
     </script>
 </head>
 <body>
@@ -62,6 +80,8 @@
 
     <form method="post" action="{% url 'trip_assign' trip.id %}">
         {% csrf_token %}
+
+        <pre>{{ passenger_reservations|safe }}</pre>
 
         <h2>Informacje o kursie:</h2>
         <p><strong>Miejsce początkowe:</strong> {{ trip.schedule.origin }}</p>
@@ -88,25 +108,39 @@
             {% endfor %}
         </select>
 
+        {% if error_message %}
+        <div class="error">
+            <p>{{ error_message }}</p>
+        </div>
+        {% endif %}
+
         <h2>Lista rezerwacji</h2>
-        <table border="1">
+        <table>
             <thead>
                 <tr>
-                    <th>Imię</th>
-                    <th>Nazwisko</th>
+                    <th>Imię i nazwisko pasażera</th>
                     <th>Liczba miejsc</th>
+                    <th>Opłacone</th>
+                    <th>Kwota</th>
+                    <th>Uwagi</th>
                 </tr>
             </thead>
             <tbody>
-                {% for reservation in reservations %}
+                {% for passenger in passengers %}
+                {% with reservation=passenger_reservations|dict_get:passenger.id %}
                 <tr>
-                    <td>{{ reservation.passenger.first_name }}</td>
-                    <td>{{ reservation.passenger.last_name }}</td>
+                    <td>{{ passenger.first_name }} {{ passenger.last_name }}</td>
                     <td>{{ reservation.seats }}</td>
-                </tr>
+                    <td>{{ reservation.payment_status }}</td>
+                    <td>{{ reservation.payment_amount }}</td>
+                    <td>{{ reservation.notes }}</td>
+                <tr>
+                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
+
+
 
         <h2>Dodaj pasażerów</h2>
         <input type="text" id="passengerSearch" placeholder="Wyszukaj pasażera..." onkeyup="filterPassengers()">
@@ -120,6 +154,10 @@
                     <th>Email</th>
                     <th>Zaznacz</th>
                     <th>Liczba miejsc</th>
+                    <th>Status płatności</th>
+                    <th>Kwota płatności</th>
+                    <th>Waluta</th>
+                    <th>Metoda płatności</th>
                 </tr>
             </thead>
             <tbody>
@@ -130,32 +168,63 @@
                     <td>{{ passenger.phone_number }}</td>
                     <td>{{ passenger.email }}</td>
                     <td>
-                        <label>
-                            <input type="checkbox" name="passengers" value="{{ passenger.id }}"
-                                {% if passenger.id in passenger_reservations %}checked{% endif %}>
-                        </label>
+                        <input type="checkbox" name="passengers" value="{{ passenger.id }}"
+                               {% if passenger.id in passenger_reservations %}checked{% endif %}>
                     </td>
                     <td>
-                        <input type="number" name="seats" value="{% if passenger.id in passenger_reservations %}{{ passenger_reservations|default:'' }}{% else %}1{% endif %}" min="1" max="20">
+                        <input type="number" name="seats"
+                           value="{{ passenger_reservations|dict_get:passenger.id|dict_get:'seats' }}"
+                           min="1" max="20">
+
+                    </td>
+                    <td>
+                        <select name="payment_status" class="payment-status" required>
+                            <option value="not-paid" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' == 'not-paid' %}selected{% endif %}>
+                                Nieopłacone
+                            </option>
+                            <option value="paid" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' == 'paid' %}selected{% endif %}>
+                                Opłacone
+                            </option>
+                        </select>
+                    </td>
+                    <td class="payment-field">
+                        <input name="payment_amount" min="0" max="1000"
+{#                               value="{{ passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount' }}"#}
+                               value="{% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount' %}{{ passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount'|floatformat:2 }}" {% else %} 0,00 {% endif %}"
+                               {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' != 'paid' %}disabled{% endif %}>
+                    </td>
+
+
+                    <td class="payment-field">
+                        <select name="payment_currency"
+                                {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' != 'paid' %}disabled{% endif %}>
+                            <option value="PLN" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_currency' == 'PLN' %}selected{% endif %}>
+                                PLN
+                            </option>
+                            <option value="EUR" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_currency' == 'EUR' %}selected{% endif %}>
+                                €
+                            </option>
+                        </select>
+                    </td>
+                    <td class="payment-field">
+                        <select name="payment_method"
+                                {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' != 'paid' %}disabled{% endif %}>
+                            <option value="online" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_method' == 'online' %}selected{% endif %}>
+                                Płatność online
+                            </option>
+                            <option value="bank_transfer_office" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_method' == 'bank_transfer_office' %}selected{% endif %}>
+                                Przelew online w biurze (BLIK)
+                            </option>
+                            <option value="cash_office" {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_method' == 'cash_office' %}selected{% endif %}>
+                                Gotówka w biurze
+                            </option>
+                        </select>
                     </td>
 
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-
-        <button class="save_passengers">Zapisz</button>
-
-        <h2>Notatki</h2>
-        <textarea name="notes" rows="4" cols="50" placeholder="Dodaj notatki dotyczące tego przejazdu...">{{ trip.notes }}</textarea>
-    
-      <label for="status">Status:</label>
-        <select name="status" id="status">
-            <option value="planned" {% if trip.status == 'planned' %}selected{% endif %}>Planowany</option>
-            <option value="completed" {% if trip.status == 'completed' %}selected{% endif %}>Zrealizowany</option>
-            <option value="cancelled" {% if trip.status == 'cancelled' %}selected{% endif %}>Anulowany</option>
-        </select>
 
         <button type="submit">Zapisz</button>
     </form>

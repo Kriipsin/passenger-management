@@ -1,6 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
-# Create your models here.
+
 class Passenger(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50, blank=True)
@@ -10,17 +12,19 @@ class Passenger(models.Model):
     def __str__(self):
         return self.first_name + " " + self.last_name
 
+
 class Vehicle(models.Model):
     license_plate = models.CharField(max_length=10)
     make = models.CharField(max_length=50)
     model = models.CharField(max_length=50)
     year = models.IntegerField()
-    seats = models.IntegerField()
-    review_date = models.DateField(blank=True)
+    seats = models.PositiveIntegerField()  # Maksymalna liczba miejsc w pojeździe
+    review_date = models.DateField(null=True, blank=True)  # Opcjonalne daty przeglądu
     notes = models.TextField(blank=True)
 
     def __str__(self):
         return self.make + " " + self.model + " (" + self.license_plate + ")"
+
 
 class Driver(models.Model):
     first_name = models.CharField(max_length=50)
@@ -29,27 +33,42 @@ class Driver(models.Model):
     email = models.EmailField(blank=True)
     active = models.BooleanField(default=True)
     license_number = models.CharField(max_length=15, blank=True)
-    license_expiry = models.DateField(blank=True)
-    notes = models.TextField(blank=True)
+    license_expiry = models.DateField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.first_name + " " + self.last_name
+
 
 class Schedule(models.Model):
     time = models.DateTimeField()
     origin = models.CharField(max_length=100)
     destination = models.CharField(max_length=100)
-    frequency = models.CharField(max_length=50, choices=[("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"), ("not-regular", "Not regular")], default="daily")
+    frequency = models.CharField(
+        max_length=50,
+        choices=[
+            ("daily", "Daily"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly"),
+            ("not-regular", "Not regular"),
+        ],
+        default="daily",
+    )
 
     def __str__(self):
         return self.origin + " - " + self.destination
+
 
 class Trip(models.Model):
     date = models.DateField()
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
     vehicle = models.ForeignKey('Vehicle', on_delete=models.SET_NULL, null=True, blank=True)
     driver = models.ForeignKey('Driver', on_delete=models.SET_NULL, null=True, blank=True)
-    passengers = models.ManyToManyField('Passenger')
+    passengers = models.ManyToManyField(
+        Passenger,
+        through='Reservation',
+        related_name='trips'
+    )
     status = models.CharField(
         max_length=50,
         choices=[
@@ -57,6 +76,7 @@ class Trip(models.Model):
             ('in_progress', 'In Progress'),
             ('completed', 'Completed'),
             ('cancelled', 'Cancelled'),
+            ('archived', 'Archived'),
         ],
         default='planned',
     )
@@ -65,20 +85,72 @@ class Trip(models.Model):
     def __str__(self):
         return f"Trip from {self.schedule.origin} to {self.schedule.destination}"
 
+    def sync_passengers(self):
+        """
+        Synchronizuj `passengers` z danymi z `Reservation`.
+        """
+        self.passengers.set(Passenger.objects.filter(reservations__trip=self))
 
-from django.db import models
 
 class Reservation(models.Model):
+    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE, related_name='reservations')
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='reservations')
-    passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE)
-    seats = models.PositiveIntegerField(default=1)
-    notes = models.TextField(blank=True)
-
-    class Meta:
-        unique_together = ('trip', 'passenger')
+    seats = models.PositiveIntegerField(default=1)  # Ilość miejsc zarezerwowanych
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)  # Kwota płatności
+    payment_currency = models.CharField(
+        max_length=3,
+        choices=[
+            ('PLN', 'Polski Złoty'),
+            ('EUR', 'Euro'),
+        ],
+        default='PLN'
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('paid', 'Opłacona'),
+            ('not-paid', 'Nieopłacona'),
+        ],
+        default='not-paid'
+    )
+    payment_method = models.CharField(
+        max_length=50,
+        choices=[
+            ('online', 'Płatność online'),
+            ('bank_transfer_office', 'Przelew online w biurze (BLIK)'),
+            ('bank_transfer_driver', 'Przelew online u kierowcy (BLIK)'),
+            ('cash_office', 'Gotówka w biurze'),
+            ('cash_driver', 'Gotówka u kierowcy'),
+        ],
+        blank=True,  # Pozwala na puste wartości
+        null=True
+    )
+    payment_date = models.DateTimeField(null=True, blank=True)  # Data realizacji płatności
+    notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.passenger} - {self.trip} ({self.seats} seats)"
+        return f"Rezerwacja dla {self.passenger} na {self.trip}"
 
+    def clean(self):
+        """
+        Walidacja danych przed zapisaniem.
+        """
+        if self.payment_status == 'paid' and not self.payment_amount:
+            raise ValidationError("Jeśli status płatności to 'paid', kwota płatności musi być większa od 0.")
+        if self.payment_status == 'not-paid' and self.payment_amount > 0:
+            raise ValidationError("Jeśli status płatności to 'not-paid', kwota płatności musi wynosić 0.")
 
-
+    def save(self, *args, **kwargs):
+        """
+        Dostosowanie logiki zapisu:
+        - Ustaw datę płatności, jeśli status to 'paid'.
+        - Walidacja spójności danych płatności.
+        """
+        if self.payment_status == 'paid' and not self.payment_date:
+            self.payment_date = timezone.now()
+        if self.payment_status == 'not-paid':
+            self.payment_amount = 0.0
+            self.payment_currency = 'PLN'
+            self.payment_method = None
+        self.clean()  # Wywołanie walidacji
+        super().save(*args, **kwargs)
