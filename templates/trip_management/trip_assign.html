@@ -36,31 +36,6 @@
             }
         }
 
-        {#window.passengerReservations = JSON.parse('{{ passenger_reservations|safe|escapejs }}');#}
-
-        {#function updatePaymentAmounts() {#}
-        {#    // Pobierz wszystkie rzędy tabeli pasażerów#}
-        {#    const rows = document.querySelectorAll("#passengerTable tbody tr");#}
-        {##}
-        {#    rows.forEach(row => {#}
-        {#        const passengerId = row.querySelector('input[name="passengers"]').value; // Pobierz ID pasażera#}
-        {#        const paymentAmountInput = row.querySelector('input[name="payment_amount"]'); // Pobierz pole payment_amount#}
-        {#        const paymentStatus = row.querySelector('select[name="payment_status"]').value; // Pobierz status płatności#}
-        {##}
-        {#        // Pobierz dane dla pasażera z `passenger_reservations`#}
-        {#        const passengerData = window.passengerReservations[passengerId]; // Globalne dane z Python#}
-        {##}
-        {#        if (passengerData && passengerData.payment_status === 'paid') {#}
-        {#            paymentAmountInput.value = passengerData.payment_amount || 0.00; // Ustaw wartość payment_amount#}
-        {#            paymentAmountInput.disabled = false; // Odblokuj pole, jeśli płatność została dokonana#}
-        {#        } else {#}
-        {#            paymentAmountInput.value = 0.00; // Ustaw domyślną wartość, jeśli nieopłacone#}
-        {#            paymentAmountInput.disabled = true; // Zablokuj pole, jeśli płatność nie została dokonana#}
-        {#        }#}
-        {#    });#}
-        {#}#}
-
-        {#console.log(window.passengerReservations);#}
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.payment-status').forEach(selectElement => {
@@ -68,7 +43,6 @@
                 selectElement.addEventListener('change', () => togglePaymentFields(selectElement));
             });
             // Zaktualizuj kwoty płatności po załadowaniu strony
-            {#updatePaymentAmounts();#}
         });
     </script>
 </head>
@@ -81,7 +55,7 @@
     <form method="post" action="{% url 'trip_assign' trip.id %}">
         {% csrf_token %}
 
-        <pre>{{ passenger_reservations|safe }}</pre>
+{#        <pre>{{ passenger_reservations|safe }}</pre>#}
 
         <h2>Informacje o kursie:</h2>
         <p><strong>Miejsce początkowe:</strong> {{ trip.schedule.origin }}</p>
@@ -116,26 +90,22 @@
 
         <h2>Lista rezerwacji</h2>
         <table>
-            <thead>
-                <tr>
-                    <th>Imię i nazwisko pasażera</th>
-                    <th>Liczba miejsc</th>
-                    <th>Opłacone</th>
-                    <th>Kwota</th>
-                    <th>Uwagi</th>
-                </tr>
-            </thead>
+            <tr>
+                <th>Imię i nazwisko pasażera</th>
+                <th>Liczba miejsc</th>
+                <th>Opłacone</th>
+                <th>Kwota</th>
+                <th>Uwagi</th>
+            </tr>
             <tbody>
-                {% for passenger in passengers %}
-                {% with reservation=passenger_reservations|dict_get:passenger.id %}
+                {%  for passenger_id, reservation in passenger_reservations.items %}
                 <tr>
-                    <td>{{ passenger.first_name }} {{ passenger.last_name }}</td>
+                    <td>{{ reservation.first_name }} {{ reservation.last_name }}</td>
                     <td>{{ reservation.seats }}</td>
                     <td>{{ reservation.payment_status }}</td>
-                    <td>{{ reservation.payment_amount }}</td>
+                    <td>{{ reservation.payment_amount }} {{ reservation.payment_currency }}</td>
                     <td>{{ reservation.notes }}</td>
                 <tr>
-                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
