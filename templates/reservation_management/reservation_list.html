@@ -27,7 +27,7 @@
                     <td>{{ reservation.passenger.first_name }} {{ reservation.passenger.last_name }}</td>
                     <td>{{ reservation.seats }}</td>
                     <td>{{ reservation.payment_status }}</td>
-                    <td>{{ reservation.payment_amount }}</td>
+                    <td>{{ reservation.payment_amount }} {{ reservation.payment_currency }}</td>
                     <td>{{ reservation.notes }}</td>
                 </tr>
                 {% endfor %}

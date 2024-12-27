@@ -1,16 +1,33 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Passenger, Vehicle, Driver, Schedule, Trip, Reservation
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from django.utils import timezone
 from django.utils.timezone import localtime, localdate
 from django.http import JsonResponse
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 
-
-# Create your views here.
 def home(request):
-    return render(request, 'home.html')
+    in_progress_trips = Trip.objects.filter(status="in_progress")
+
+    grouped_trips = (
+        in_progress_trips
+        .values("schedule__origin", "schedule__destination")  # Grupowanie po polach
+        .annotate(total_passengers=Sum("reservations__seats"))  # Sumowanie liczby miejsc
+        .order_by("schedule__origin", "schedule__destination")  # Opcjonalne sortowanie
+    )
+
+    data = []
+    for group in grouped_trips:
+        data.append({
+            "origin": group["schedule__origin"],
+            "destination": group["schedule__destination"],
+            "total_passengers": group["total_passengers"] or 0
+        })
+
+    return render(request, "home.html", {
+        "data": data,
+    })
 
 def passenger_list(request):
     passengers = Passenger.objects.all()
@@ -345,7 +362,7 @@ def new_reservation(request):
         trip_id = request.POST.get('route')
         notes = request.POST.get('notes')
         payment_status = request.POST.get('payment_status', 'not-paid')
-        payment_amount = float(request.POST.get('payment_amount', '0.0'))
+        payment_amount = request.POST.get('payment_amount', '0.0')
         payment_currency = request.POST.get('payment_currency', 'PLN')
         payment_method = request.POST.get('payment_method', '')
 

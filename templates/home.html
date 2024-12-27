@@ -10,6 +10,24 @@
 
     {% include 'partials/navbar.html' %}
 
-    <p>Witaj na stronie głównej</p>
+    <h1>Kursy w trakcie realizacji</h1>
+    <table>
+        <tr>
+            <th>Miejsce startu</th>
+            <th>Miejsce docelowe</th>
+            <th>Liczba pasażerów</th>
+        </tr>
+        {% for trip in data %}
+        <tr>
+            <td>{{ trip.origin }}</td>
+            <td>{{ trip.destination }}</td>
+            <td>{{ trip.total_passengers }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Brak kursów w trakcie realizacji</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
