@@ -15,13 +15,16 @@
         <tr>
             <th>Miejsce startu</th>
             <th>Miejsce docelowe</th>
+            <th>Godzina</th>
             <th>Liczba pasażerów</th>
         </tr>
         {% for trip in data %}
         <tr>
             <td>{{ trip.origin }}</td>
             <td>{{ trip.destination }}</td>
+            <td>{{ trip.departure_time }}</td>
             <td>{{ trip.total_passengers }}</td>
+            <td><a href="{% url 'reservation_list' trip.trip_id %}">Lista rezerwacji</a></td>
         </tr>
         {% empty %}
         <tr>

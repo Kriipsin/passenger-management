@@ -46,4 +46,6 @@ urlpatterns = [
     path('trips/<int:trip_id>/reservations/', views.trip_reservations, name='reservation_list'),
     path('trips/<int:trip_id>/reserved_passengers/', views.get_reserved_passengers, name='reserved_passengers'),
     path('get_trips_by_date/', views.get_trips_by_date, name='get_trips_by_date'),
+    path("reports/general/", views.general_report_view, name="general_report"),
+    path("reports/weekly/", views.weekly_report_view, name="weekly_report"),
 ]

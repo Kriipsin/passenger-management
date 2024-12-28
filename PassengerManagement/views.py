@@ -2,17 +2,28 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Passenger, Vehicle, Driver, Schedule, Trip, Reservation
 from datetime import timedelta, datetime, date
 from django.utils import timezone
-from django.utils.timezone import localtime, localdate
-from django.http import JsonResponse
-from django.db.models import Sum
+from django.utils.timezone import localtime, localdate, now
+from django.http import JsonResponse, HttpResponse
 from django.core.exceptions import ValidationError
+import matplotlib.pyplot as plt
+from django.db.models import Sum, Count, F
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import HexColor
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.shapes import Drawing
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from io import BytesIO
+
 
 def home(request):
     in_progress_trips = Trip.objects.filter(status="in_progress")
 
     grouped_trips = (
         in_progress_trips
-        .values("schedule__origin", "schedule__destination")  # Grupowanie po polach
+        .values("schedule__origin", "schedule__destination", "schedule__time")  # Grupowanie po polach
         .annotate(total_passengers=Sum("reservations__seats"))  # Sumowanie liczby miejsc
         .order_by("schedule__origin", "schedule__destination")  # Opcjonalne sortowanie
     )
@@ -22,7 +33,13 @@ def home(request):
         data.append({
             "origin": group["schedule__origin"],
             "destination": group["schedule__destination"],
-            "total_passengers": group["total_passengers"] or 0
+            "departure_time": str(group["schedule__time"])[11:16],
+            "total_passengers": group["total_passengers"] or 0,
+            "trip_id": in_progress_trips.filter(
+                schedule__origin=group["schedule__origin"],
+                schedule__destination=group["schedule__destination"],
+                schedule__time=group["schedule__time"],
+            ).first().id
         })
 
     return render(request, "home.html", {
@@ -482,28 +499,117 @@ def generate_dates(start_time, frequency):
         dates = [start_date]
     return dates
 
+def generate_report(report_type='general'):
 
-from django.http import JsonResponse
-from .models import Trip
+    pdfmetrics.registerFont(TTFont('DejaVuSans', './static/fonts/DejaVuSans.ttf'))
+    pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', './static/fonts/DejaVuSans-Bold.ttf'))
+
+    # Filtr kursów
+    if report_type == 'general':
+        trips = Trip.objects.filter(status='completed')
+    elif report_type == 'weekly':
+        start_of_week = now().date() - timedelta(days=now().weekday())
+        trips = Trip.objects.filter(status='completed', date__gte=start_of_week)
+
+    # Zarobki
+    total_income = trips.aggregate(total=Sum('reservations__payment_amount'))['total'] or 0
+    weeks = trips.values('date__week').distinct().count()
+    weekly_avg_income = total_income / weeks if weeks > 0 else 0
+
+    # Pasażerowie i zarobki wg dnia tygodnia
+    day_data = trips.values('date__week_day').annotate(
+        passengers=Count('reservations__passenger'),
+        income=Sum('reservations__payment_amount')
+    )
+
+    # Przygotowanie danych dla wykresów
+    days = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Niedz']
+    passengers_by_day = [0.0] * 7  # Zainicjuj jako float
+    income_by_day = [0.0] * 7  # Zainicjuj jako float
+
+    for data in day_data:
+        day_index = (data['date__week_day'] - 2) % 7
+        passengers_by_day[day_index] += float(data.get('passengers', 0) or 0)
+        income_by_day[day_index] += float(data.get('income', 0) or 0)
+
+    if report_type == 'general':
+        trips_count = trips.count()
+        passengers_by_day = [float(p / trips_count) for p in passengers_by_day]
+        income_by_day = [float(i / trips_count) for i in income_by_day]
+
+    # Konwertuj wartości na float w przypadku średnich
+    weekly_avg_income = float(weekly_avg_income)
+
+    # Metody płatności
+    payment_methods = dict(Reservation._meta.get_field('payment_method').choices)
+    payment_data = {key: trips.filter(reservations__payment_method=key).count() for key in payment_methods.keys()}
+
+    # Generowanie PDF
+    pdf = canvas.Canvas("report.pdf", pagesize=(800, 1000))
+    pdf.setTitle("Raport sprzedaży")
+
+    y_value = 950
+    x_value = 50
+
+    # Tytuł raportu
+    pdf.setFont("DejaVuSans-Bold", 16)
+    pdf.drawString(x_value, y_value, f"Raport {'ogólny' if report_type == 'general' else 'tygodniowy'}")
+    pdf.setFont("DejaVuSans", 12)
+    pdf.drawString(x_value, y_value-20, f"Data generowania: {now().strftime('%d-%m-%Y %H:%M:%S')}")
+
+    # Zarobki
+    pdf.drawString(x_value, y_value-50, f"Zarobki: {total_income:.2f} PLN")
+    if report_type == 'general':
+        pdf.drawString(x_value, y_value-70, f"Średnie zarobki tygodniowe: {weekly_avg_income:.2f} PLN")
+
+    # Liczba pasażerów wg dnia tygodnia
+    pdf.setFont("DejaVuSans-Bold", 12)
+    pdf.drawString(x_value, y_value-100, "Liczba pasażerów wg dnia tygodnia")
+    d = Drawing(400, 200)
+    bar_chart = VerticalBarChart()
+    bar_chart.data = [passengers_by_day]
+    bar_chart.categoryAxis.categoryNames = days
+    bar_chart.valueAxis.valueMin = 0
+    bar_chart.width = 350
+    bar_chart.height = 150
+    d.add(bar_chart)
+    d.drawOn(pdf, x_value+125, y_value-300)
+
+    # Zarobki wg dnia tygodnia
+    pdf.drawString(x_value, y_value-390, "Zarobki wg dnia tygodnia (PLN)")
+    d = Drawing(400, 200)
+    bar_chart.data = [income_by_day]
+    d.add(bar_chart)
+    d.drawOn(pdf, x_value+125, y_value-575)
+
+    # Metody płatności
+    pdf.setFont("DejaVuSans-Bold", 12)
+    pdf.drawString(x_value, y_value-650, "Sposoby płatności")
+    pie_chart = Pie()
+    pie_chart.data = list(payment_data.values())
+    pie_chart.labels = [dict(payment_methods).get(key, "Nieznana") for key in payment_data.keys()]
+    pie_chart.width = 150
+    pie_chart.height = 150
+    pie_chart.slices.strokeWidth = 0.5
+    pie_chart.slices.fontName = "DejaVuSans"
+    pie_chart.slices.fontSize = 8
+    d = Drawing(300, 200)
+    d.add(pie_chart)
+    d.drawOn(pdf,x_value+250, y_value-850)
+
+    pdf.save()
+
+def general_report_view(request):
+    generate_report(report_type='general')
+    with open("report.pdf", "rb") as pdf:
+        response = HttpResponse(pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="general_report.pdf"'
+        return response
 
 
-# def get_trips_by_date(request):
-#     date = request.GET.get('date')
-#
-#     if not date:
-#         return JsonResponse({'error': 'Brak daty'}, status=400)
-#
-#     trips = Trip.objects.filter(date=date, status="planned" or "in-progress").order_by('schedule__time').select_related('schedule')
-#
-#     trips_data = [
-#         {
-#             'id': trip.id,
-#             'schedule__origin': trip.schedule.origin,
-#             'schedule__destination': trip.schedule.destination,
-#             'schedule__time': trip.schedule.time.strftime('%Y-%m-%dT%H:%M'),
-#         }
-#         for trip in trips
-#     ]
-#     return JsonResponse(trips_data, safe=False)
-
-
+def weekly_report_view(request):
+    generate_report(report_type='weekly')
+    with open("report.pdf", "rb") as pdf:
+        response = HttpResponse(pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="weekly_report.pdf"'
+        return response
