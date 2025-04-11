@@ -11,7 +11,9 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Edytuj kierowcę</h1>
+    <div class="h1-container">
+        <h1>Edytuj kierowcę</h1>
+    </div>
     <form action="/drivers/edit/{{ driver.id }}/" method="post">
         {% csrf_token %}
         <label for="first_name">Imię</label>
@@ -39,8 +41,13 @@
         <label for="notes">Uwagi</label>
         <textarea name="notes" id="notes">{{ driver.notes }}</textarea>
 
-        <button type="submit">Zapisz</button>
+        <div class="right">
+            <button type="submit">Zapisz</button>
+        </div>
     </form>
-    <a href="/drivers">Powrót do listy kierowców</a>
+    
+    <div class="centered">
+        <a href="/drivers/" class="button">Powrót do listy kierowców</a>
+    </div>
 </body>
 </html>

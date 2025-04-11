@@ -2,21 +2,24 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'home.css' %}">
+
     <title>Passenger List</title>
 </head>
 <body>
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Lista pasażerów</h1>
+    <div class="h1-container">
+        <h1>Lista pasażerów</h1>
+    </div>
     <table>
         <tr>
             <th>Imię</th>
             <th>Nazwisko</th>
             <th>Numer telefonu</th>
             <th>Email</th>
+            <th></th>
+            <th></th>
         </tr>
         {% for passenger in passengers %}
         <tr>
@@ -29,6 +32,9 @@
         </tr>
         {% endfor %}
     </table>
-<a href="/passengers/add/">Nowy pasażer</a>
+
+    <div class="right" style="margin-right: 5%">
+        <a href="/passengers/add/" class="button">Dodaj nowego pasażera</a>
+    </div>
 </body>
 </html>

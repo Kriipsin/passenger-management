@@ -1,7 +1,10 @@
 /* Stylizacja paska nawigacyjnego */
 body {
-    margin: 0;
     font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
 }
 
 .navbar {
@@ -10,11 +13,12 @@ body {
     display: flex;
     align-items: center;
     padding: 10px 20px;
-
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
 }
 
 .navbar a {
-    color: black; /* Kolor tekstu */
+    color: black;
     padding: 14px 20px;
     text-decoration: none;
     text-align: center;
@@ -22,11 +26,11 @@ body {
 }
 
 .navbar a:hover {
-    text-decoration: underline; /* Podkreślenie przy najechaniu */
+    text-decoration: underline;
 }
 
 .navbar .right {
-    margin-left: auto; /* Przesuwa element na prawo */
+    margin-left: auto;
 }
 
 .logo {
@@ -41,21 +45,151 @@ p {
 }
 
 h1 {
-    margin-left: 10px;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 24px;
+    color: #444;
+}
+
+.h1-container {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #D9D9D9;
 }
 
 table {
-    margin-left: 10px;
-    /*border-collapse: collapse;*/
-    /*width: 100%;*/
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #D9D9D9;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 th, td {
-    border: 1px solid black;
+    border: 1px solid #989898;
     padding: 8px;
     text-align: center;
 }
 
-/*.payment-field {*/
-/*    display: none;*/
-/*}*/
+table tr:nth-child(even) {
+    background-color: #cfcece;
+}
+
+button {
+    display: inline-block;
+    margin: 20px 10px;
+    padding: 10px 20px;
+    background-color: #989898;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    /*font-weight: bold;*/
+}
+
+form {
+    max-width: 500px;
+    width: 90%;
+    margin: 20px auto;
+    background-color: #D9D9D9;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 13px;
+}
+
+.trip_assign_form {
+    max-width: 100%;
+    width: 90%;
+    margin: 20px auto;
+    background-color: #D9D9D9;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 13px;
+}
+
+form input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+form input, form select, form textarea {
+    width: 100%;
+    padding: 8px 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+form input[type="submit"]:hover, form button:hover {
+    background-color: #9f9f9f;
+}
+
+section {
+    margin: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+section h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #444;
+}
+
+td a {
+    text-decoration: none;
+    color: #003CD4;
+}
+
+td a:hover {
+    text-decoration: underline;
+}
+
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px 0;
+    font-size: 14px;
+    text-align: center;
+    color: #000;
+    background-color: #ccc;
+    border: 1px solid #999;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #bbb;
+    border-color: #888;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.right {
+    /*max-width: 10%;*/
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    /*padding-right: 100px;*/
+}
+
+

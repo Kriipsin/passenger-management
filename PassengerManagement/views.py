@@ -1,4 +1,8 @@
+from dataclasses import replace
+
 from django.shortcuts import render, redirect, get_object_or_404
+from reportlab.lib import colors
+
 from .models import Passenger, Vehicle, Driver, Schedule, Trip, Reservation
 from datetime import timedelta, datetime, date
 from django.utils import timezone
@@ -16,6 +20,11 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
+from django.http import HttpResponse
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.db.models import Q
+from reportlab.lib.pagesizes import A4
 
 
 def home(request):
@@ -145,7 +154,7 @@ def driver_add(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         phone_number = request.POST.get('phone_number')
-        active = 'active' in request.POST
+        active = 'active' in request.POST or True
         license_number = request.POST.get('license_number')
         license_expiry = request.POST.get('license_expiry')
         notes = request.POST.get('notes')
@@ -231,7 +240,7 @@ def trip_list(request):
     update_trip_statuses()  # Aktualizacja statusów kursów
 
     trips = Trip.objects.annotate(
-        total_passengers=Sum('reservations__seats')  # Sumuje liczbę miejsc z rezerwacji
+        total_passengers=Sum('reservations__seats')
     ).order_by('date', 'schedule__time')
 
     return render(request, 'trip_management/trip_list.html', {'trips': trips})
@@ -305,26 +314,30 @@ def trip_assign(request, trip_id):
     if request.method == 'POST':
         driver_id = request.POST.get('driver_id')
         vehicle_id = request.POST.get('vehicle_id')
-        status = request.POST.get('status')
-        notes = request.POST.get('notes')
 
         # Pobierz dane pasażerów i rezerwacji z formularza
         passenger_ids = request.POST.getlist('passengers')
         seats_data = request.POST.getlist('seats')
+        seats_data = [seat for seat in seats_data if seat]
         payment_status_data = request.POST.getlist('payment_status')
+        payment_status_data = [status for status in payment_status_data if status == 'paid']
         payment_amount_data = request.POST.getlist('payment_amount')
+        #convert to float
+        payment_amount_data = [float(amount.replace(',','.')) for amount in payment_amount_data if amount]
         payment_currency_data = request.POST.getlist('payment_currency')
         payment_method_data = request.POST.getlist('payment_method')
 
         # Aktualizuj dane kursu
         trip.driver = Driver.objects.get(id=driver_id) if driver_id else None
         trip.vehicle = Vehicle.objects.get(id=vehicle_id) if vehicle_id else None
-        trip.status = status
-        trip.notes = notes
+        trip.status = request.POST.get('status') or trip.status or 'planned'
+        trip.notes = request.POST.get('notes') or trip.notes or ''
+
         trip.save()
 
         # Aktualizuj rezerwacje
         for i, passenger_id in enumerate(passenger_ids):
+
             passenger = Passenger.objects.get(id=passenger_id)
             Reservation.objects.update_or_create(
                 trip=trip,
@@ -490,114 +503,139 @@ def generate_dates(start_time, frequency):
 
     dates = []
     if frequency == "daily":
-        dates = [start_date + timedelta(days=i) for i in range(7)]  # 7 dni
+        dates = [start_date + timedelta(days=i) for i in range(7)]
     elif frequency == "weekly":
-        dates = [start_date + timedelta(weeks=i) for i in range(4)]  # 4 tygodnie
+        dates = [start_date + timedelta(weeks=i) for i in range(4)]
     elif frequency == "monthly":
-        dates = [start_date + timedelta(days=30 * i) for i in range(3)]  # 3 miesiące
+        dates = [start_date + timedelta(days=30 * i) for i in range(3)]
     elif frequency == "not-regular":
         dates = [start_date]
     return dates
 
-def generate_report(report_type='general'):
+def generate_report(report_type='general', filename='report.pdf'):
+    try:
+        pdfmetrics.registerFont(TTFont('DejaVuSans', './static/fonts/DejaVuSans.ttf'))
+        pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', './static/fonts/DejaVuSans-Bold.ttf'))
 
-    pdfmetrics.registerFont(TTFont('DejaVuSans', './static/fonts/DejaVuSans.ttf'))
-    pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', './static/fonts/DejaVuSans-Bold.ttf'))
+        # Dane źródłowe
+        if report_type == 'weekly':
+            start_of_week = now().date() - timedelta(days=now().weekday())
+            trips = Trip.objects.filter(status='completed', date__gte=start_of_week)
+        else:
+            trips = Trip.objects.filter(status='completed')
 
-    # Filtr kursów
-    if report_type == 'general':
-        trips = Trip.objects.filter(status='completed')
-    elif report_type == 'weekly':
-        start_of_week = now().date() - timedelta(days=now().weekday())
-        trips = Trip.objects.filter(status='completed', date__gte=start_of_week)
+        total_income = trips.aggregate(total=Sum('reservations__payment_amount'))['total'] or 0
+        weeks = trips.values('date__week').distinct().count()
+        weekly_avg_income = float(total_income / weeks) if weeks else 0
 
-    # Zarobki
-    total_income = trips.aggregate(total=Sum('reservations__payment_amount'))['total'] or 0
-    weeks = trips.values('date__week').distinct().count()
-    weekly_avg_income = total_income / weeks if weeks > 0 else 0
+        day_data = trips.values('date__week_day').annotate(
+            passengers=Count('reservations__passenger'),
+            income=Sum('reservations__payment_amount')
+        )
 
-    # Pasażerowie i zarobki wg dnia tygodnia
-    day_data = trips.values('date__week_day').annotate(
-        passengers=Count('reservations__passenger'),
-        income=Sum('reservations__payment_amount')
-    )
+        # Dane wykresowe
+        days = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
+        passengers_by_day = [0.0] * 7
+        income_by_day = [0.0] * 7
 
-    # Przygotowanie danych dla wykresów
-    days = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Niedz']
-    passengers_by_day = [0.0] * 7  # Zainicjuj jako float
-    income_by_day = [0.0] * 7  # Zainicjuj jako float
+        for data in day_data:
+            day_index = (data['date__week_day'] - 2) % 7
+            passengers_by_day[day_index] += float(data.get('passengers') or 0)
+            income_by_day[day_index] += float(data.get('income') or 0)
 
-    for data in day_data:
-        day_index = (data['date__week_day'] - 2) % 7
-        passengers_by_day[day_index] += float(data.get('passengers', 0) or 0)
-        income_by_day[day_index] += float(data.get('income', 0) or 0)
+        if report_type == 'general':
+            trips_count = trips.count()
+            if trips_count > 0:
+                passengers_by_day = [p / trips_count for p in passengers_by_day]
+                income_by_day = [i / trips_count for i in income_by_day]
 
-    if report_type == 'general':
-        trips_count = trips.count()
-        passengers_by_day = [float(p / trips_count) for p in passengers_by_day]
-        income_by_day = [float(i / trips_count) for i in income_by_day]
+        # Metody płatności
+        payment_methods = dict(Reservation._meta.get_field('payment_method').choices)
+        payment_data = {
+            payment_methods.get(key, 'Inna'): trips.filter(reservations__payment_method=key).count()
+            for key in payment_methods
+        }
 
-    # Konwertuj wartości na float w przypadku średnich
-    weekly_avg_income = float(weekly_avg_income)
+        # PDF
+        pdf = canvas.Canvas(filename, pagesize=A4)
+        width, height = A4
+        margin = 50
+        y = height - margin
 
-    # Metody płatności
-    payment_methods = dict(Reservation._meta.get_field('payment_method').choices)
-    payment_data = {key: trips.filter(reservations__payment_method=key).count() for key in payment_methods.keys()}
+        pdf.setFont("DejaVuSans-Bold", 16)
+        pdf.drawString(margin, y, f"Raport {'ogólny' if report_type == 'general' else 'tygodniowy'}")
+        pdf.setFont("DejaVuSans", 10)
+        y -= 20
+        pdf.drawString(margin, y, f"Data generowania: {now().strftime('%d-%m-%Y %H:%M:%S')}")
 
-    # Generowanie PDF
-    pdf = canvas.Canvas("report.pdf", pagesize=(800, 1000))
-    pdf.setTitle("Raport sprzedaży")
+        y -= 30
+        pdf.setFont("DejaVuSans-Bold", 12)
+        pdf.drawString(margin, y, "Podsumowanie:")
+        pdf.setFont("DejaVuSans", 10)
+        y -= 15
+        pdf.drawString(margin, y, f"- Liczba przejazdów: {trips.count()}")
+        y -= 15
+        pdf.drawString(margin, y, f"- Całkowity dochód: {total_income:.2f} PLN")
+        y -= 15
+        if report_type == 'general':
+            pdf.drawString(margin, y, f"- Średni dochód tygodniowy: {weekly_avg_income:.2f} PLN")
 
-    y_value = 950
-    x_value = 50
+        # Wykres pasażerów
+        y -= 40
+        pdf.setFont("DejaVuSans-Bold", 12)
+        pdf.drawString(margin, y, "Średnia liczba pasażerów wg dnia tygodnia")
+        y -= 10
+        d = Drawing(400, 150)
+        bar1 = VerticalBarChart()
+        bar1.x = 0
+        bar1.y = 0
+        bar1.height = 120
+        bar1.width = 350
+        bar1.data = [passengers_by_day]
+        bar1.categoryAxis.categoryNames = days
+        bar1.bars.fillColor = colors.HexColor("#4F81BD")
+        d.add(bar1)
+        d.drawOn(pdf, margin, y - 130)
 
-    # Tytuł raportu
-    pdf.setFont("DejaVuSans-Bold", 16)
-    pdf.drawString(x_value, y_value, f"Raport {'ogólny' if report_type == 'general' else 'tygodniowy'}")
-    pdf.setFont("DejaVuSans", 12)
-    pdf.drawString(x_value, y_value-20, f"Data generowania: {now().strftime('%d-%m-%Y %H:%M:%S')}")
+        # Wykres zarobków
+        y -= 180
+        pdf.setFont("DejaVuSans-Bold", 12)
+        pdf.drawString(margin, y, "Średni dochód wg dnia tygodnia (PLN)")
+        y -= 10
+        d = Drawing(400, 150)
+        bar2 = VerticalBarChart()
+        bar2.x = 0
+        bar2.y = 0
+        bar2.height = 120
+        bar2.width = 350
+        bar2.data = [income_by_day]
+        bar2.categoryAxis.categoryNames = days
+        bar2.bars.fillColor = colors.HexColor("#9BBB59")
+        d.add(bar2)
+        d.drawOn(pdf, margin, y - 130)
 
-    # Zarobki
-    pdf.drawString(x_value, y_value-50, f"Zarobki: {total_income:.2f} PLN")
-    if report_type == 'general':
-        pdf.drawString(x_value, y_value-70, f"Średnie zarobki tygodniowe: {weekly_avg_income:.2f} PLN")
+        # Wykres kołowy - metody płatności
+        y -= 180
+        pdf.setFont("DejaVuSans-Bold", 12)
+        pdf.drawString(margin, y, "Podział metod płatności")
+        y -= 10
+        d = Drawing(200, 150)
+        pie = Pie()
+        pie.x = 100
+        pie.y = -55
+        pie.data = list(payment_data.values())
+        pie.labels = list(payment_data.keys())
+        pie.width = 150
+        pie.height = 150
+        pie.slices.fontName = "DejaVuSans"
+        pie.slices.fontSize = 8
+        d.add(pie)
+        d.drawOn(pdf, margin, y - 130)
 
-    # Liczba pasażerów wg dnia tygodnia
-    pdf.setFont("DejaVuSans-Bold", 12)
-    pdf.drawString(x_value, y_value-100, "Liczba pasażerów wg dnia tygodnia")
-    d = Drawing(400, 200)
-    bar_chart = VerticalBarChart()
-    bar_chart.data = [passengers_by_day]
-    bar_chart.categoryAxis.categoryNames = days
-    bar_chart.valueAxis.valueMin = 0
-    bar_chart.width = 350
-    bar_chart.height = 150
-    d.add(bar_chart)
-    d.drawOn(pdf, x_value+125, y_value-300)
+        pdf.save()
 
-    # Zarobki wg dnia tygodnia
-    pdf.drawString(x_value, y_value-390, "Zarobki wg dnia tygodnia (PLN)")
-    d = Drawing(400, 200)
-    bar_chart.data = [income_by_day]
-    d.add(bar_chart)
-    d.drawOn(pdf, x_value+125, y_value-575)
-
-    # Metody płatności
-    pdf.setFont("DejaVuSans-Bold", 12)
-    pdf.drawString(x_value, y_value-650, "Sposoby płatności")
-    pie_chart = Pie()
-    pie_chart.data = list(payment_data.values())
-    pie_chart.labels = [dict(payment_methods).get(key, "Nieznana") for key in payment_data.keys()]
-    pie_chart.width = 150
-    pie_chart.height = 150
-    pie_chart.slices.strokeWidth = 0.5
-    pie_chart.slices.fontName = "DejaVuSans"
-    pie_chart.slices.fontSize = 8
-    d = Drawing(300, 200)
-    d.add(pie_chart)
-    d.drawOn(pdf,x_value+250, y_value-850)
-
-    pdf.save()
+    except Exception as e:
+        print(f"Błąd podczas generowania raportu: {e}")
 
 def general_report_view(request):
     generate_report(report_type='general')

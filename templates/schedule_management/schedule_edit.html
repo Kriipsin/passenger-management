@@ -10,7 +10,10 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Edytuj dane kursu</h1>
+    <div class="h1-container">
+        <h1>Edytuj dane kursu</h1>
+    </div>
+
     <form action="/schedules/edit/{{ schedule.id }}/" method="post">
         {% csrf_token %}
         <label for="time">Termin</label>
@@ -30,9 +33,14 @@
             <option value="non-regular" {% if schedule.frequency == 'non-regular' %}selected{% endif %}>Nieregularnie</option>
         </select>
     
-        <button type="submit">Zapisz</button>
+        <div class="right">
+            <button type="submit">Zapisz</button>
+        </div>
     </form>
-    <a href="{% url 'passenger_list' %}">Powrót do listy pasażerów</a>
+
+    <div class="centered">
+        <a href="/schedules/" class="button">Powrót do listy kursów</a>
+    </div>
 
 </body>
 </html>

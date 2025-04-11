@@ -8,7 +8,10 @@
 </head>
 <body>
     {% include 'partials/navbar.html' %}
-    <h1>Dodaj kierowcę</h1>
+
+    <div class="h1-container">
+        <h1>Dodaj kierowcę</h1>
+    </div>
     <form action="/drivers/add/" method="post">
         {% csrf_token %}
 
@@ -24,9 +27,6 @@
         <label for="email">Email</label>
         <input type="email" name="email" id="email" required>
 
-        <label for="active">Aktywny</label>
-        <input type="checkbox" name="active" id="active">
-
         <label for="license_number">Numer prawa jazdy</label>
         <input type="text" name="license_number" id="license_number" required>
 
@@ -36,8 +36,12 @@
         <label for="notes">Uwagi</label>
         <textarea name="notes" id="notes"></textarea>
 
-        <button type="submit">Dodaj</button>
+        <div class="right">
+            <button type="submit">Dodaj</button>
+        </div>
     </form>
-    <a href="/drivers">Powrót do listy kierowców</a>
+    <div class="centered">
+        <a href="/drivers/" class="button">Powrót do listy kierowców</a>
+    </div>
 </body>
 </html>

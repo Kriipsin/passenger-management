@@ -10,7 +10,10 @@
     {% include 'partials/navbar.html' %}
 
     <div class="container">
-        <h1>Rezerwacje dla kursu {{ trip }}</h1>
+        <div class="h1-container">
+            <h1>Rezerwacje dla kursu {{ trip.schedule.origin }}-{{ trip.schedule.destination }} <br> {{ trip.date|date:"d.m.Y" }}, {{ trip.schedule.time.time }}</h1>
+        </div>
+
         <table>
             <thead>
                 <tr>
@@ -33,7 +36,10 @@
                 {% endfor %}
             </tbody>
         </table>
-        <a href="{% url 'trip_list' %}">Powrót do listy kursów</a>
+
+        <div class="right" style="margin-right: 5%">
+            <a href="{% url 'trip_list' %}" class="button">Powrót do listy przejazdów</a>
+        </div>
     </div>
 </body>
 </html>

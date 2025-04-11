@@ -10,8 +10,9 @@
 <body>
 
     {% include 'partials/navbar.html' %}
-
-    <h1>Lista kierowców</h1>
+    <div class="h1-container">
+        <h1>Lista kierowców</h1>
+    </div>
     <table>
         <tr>
             <th>Imię</th>
@@ -22,6 +23,8 @@
             <th>Numer prawa jazdy</th>
             <th>Ważność prawa jazdy</th>
             <th>Uwagi</th>
+            <th></th>
+            <th></th>
         </tr>
         {% for driver in drivers %}
         <tr>
@@ -38,7 +41,10 @@
         </tr>
         {% endfor %}
     </table>
-    <a href="/drivers/add/">Dodaj kierowcę</a>
+    <div class="right">
+        <a href="/drivers/add/" class="button" style="margin-right: 5%">Dodaj kierowcę</a>
+    </div>
+    
 
 </body>
 </html>

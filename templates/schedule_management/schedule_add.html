@@ -10,7 +10,10 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Nowy kurs</h1>
+    <div class="h1-container">
+        <h1>Nowy kurs</h1>
+    </div>
+
     <form action="{% url 'schedule_add' %}" method="post">
         {% csrf_token %}
         <label for="time">Termin</label>
@@ -30,9 +33,13 @@
             <option value="non-regular">Nieregularnie</option>
         </select>
 
-        <button type="submit">Dodaj</button>
+        <div class="right">
+            <button type="submit">Dodaj</button>
+        </div>
     </form>
-    <a href="{% url 'schedule_list' %}">Powrót do listy kursów</a>
+    <div class="centered">
+        <a href="{% url 'schedule_list' %}" class="button">Powrót do listy kursów</a>
+    </div>
 
 </body>
 </html>

@@ -10,7 +10,9 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Lista kursów</h1>
+    <div class="h1-container">
+        <h1>Lista przejazdów</h1>
+    </div>
 
     <table>
         <thead>
@@ -24,6 +26,9 @@
                 <th>Liczba pasażerów</th>
                 <th>Status</th>
                 <th>Notatki</th>
+                <th></th>
+                <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -40,14 +45,15 @@
                 <td>{{ trip.notes|default:"-" }}</td>
                 <td><a href="{% url 'trip_assign' trip.id %}">Przypisz zasoby</a></td>
                 <td><a href="{% url 'reservation_list' trip.id %}">Lista rezerwacji</a></td>
-                <td><a href="{% url 'trip_edit' trip.id %}">Edytuj</a></td>
                 <td><a href="{% url 'trip_delete' trip.id %}" onclick="return confirm('Czy na pewno chcesz usunąć ten przejazd?')">Usuń</a></td>
             </tr>
             {% endfor %}
     </tbody>
 </table>
 
-<a href="{% url 'trip_add' %}">Dodaj nowy przejazd</a>
+    <div class="right" style="margin-right: 5%">
+        <a href="{% url 'trip_add' %}" class="button">Dodaj nowy przejazd</a>
+    </div>
 
 </body>
 </html>

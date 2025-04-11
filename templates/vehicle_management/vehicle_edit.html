@@ -9,16 +9,11 @@
 </head>
 
 <body>
-    <div class="navbar">
-        <a href="/"><img src="{% static 'bus.png' %}" alt="Ikona autobusu" class="logo"></a>
-        <a href="/passengers">Pasażerowie</a>
-        <a href="/vehicles">Pojazdy</a>
-        <a href="/drivers">Kierowcy</a>
-        <a href="/schedules">Kursy</a>
-        <a href="/trips">Lista przejazdów</a>
-        <a href="/new-reservation" class="right">Nowa rezerwacja</a>
+    {% include 'partials/navbar.html' %}
+    <div class="h1-container">
+        <h1>Edytuj pojazd</h1>
     </div>
-    <h1>Edytuj dane pojazdu</h1>
+
     <form action="{% url 'vehicle_edit' vehicle.id %}" method="post">
         {% csrf_token %}
         <label for="license_plate">Numer rejestracyjny</label>
@@ -42,9 +37,15 @@
         <label for="notes">Uwagi</label>
         <textarea name="notes" id="notes">{{ vehicle.notes }}</textarea>
 
-        <button type="submit">Zapisz</button>
+        <div class="right">
+            <button type="submit">Zapisz</button>
+        </div>
+        
     </form>
-    <a href="{% url 'vehicle_list' %}">Powrót do listy pojazdów</a>
+
+    <div class="centered">
+        <a href="{% url 'vehicle_list' %}" class="button">Powrót do listy pojazdów</a>
+    </div>
 
 </body>
 </html>

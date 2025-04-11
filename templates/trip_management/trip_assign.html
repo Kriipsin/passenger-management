@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     {% load static %}
     {% load custom_filters %}
-    <link rel="stylesheet" href="{% static 'home.css' %}">
     <title>Przypisz zasoby do przejazdu</title>
     <script>
         function filterPassengers() {
@@ -42,7 +41,6 @@
                 togglePaymentFields(selectElement);
                 selectElement.addEventListener('change', () => togglePaymentFields(selectElement));
             });
-            // Zaktualizuj kwoty płatności po załadowaniu strony
         });
     </script>
 </head>
@@ -52,10 +50,9 @@
 
     <h1>Przypisz zasoby do przejazdu</h1>
 
-    <form method="post" action="{% url 'trip_assign' trip.id %}">
+    <form class="trip_assign_form" method="post" action="{% url 'trip_assign' trip.id %}">
         {% csrf_token %}
 
-{#        <pre>{{ passenger_reservations|safe }}</pre>#}
 
         <h2>Informacje o kursie:</h2>
         <p><strong>Miejsce początkowe:</strong> {{ trip.schedule.origin }}</p>
@@ -63,7 +60,7 @@
         <p><strong>Godzina odjazdu:</strong> {{ trip.schedule.time|date:"d-m-Y H:i" }}</p>
 
         <h2>Przypisz pojazd</h2>
-        <select name="vehicle_id" required>
+        <select name="vehicle_id">
             <option value="">Wybierz pojazd</option>
             {% for vehicle in vehicles %}
             <option value="{{ vehicle.id }}" {% if trip.vehicle and trip.vehicle.id == vehicle.id %}selected{% endif %}>
@@ -73,7 +70,7 @@
         </select>
 
         <h2>Przypisz kierowcę</h2>
-        <select name="driver_id" required>
+        <select name="driver_id">
             <option value="">Wybierz kierowcę</option>
             {% for driver in drivers %}
             <option value="{{ driver.id }}" {% if trip.driver and trip.driver.id == driver.id %}selected{% endif %}>
@@ -159,8 +156,7 @@
                     </td>
                     <td class="payment-field">
                         <input name="payment_amount" min="0" max="1000"
-{#                               value="{{ passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount' }}"#}
-                               value="{% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount' %}{{ passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount'|floatformat:2 }}" {% else %} 0,00 {% endif %}"
+                               value="{% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount' %}{{ passenger_reservations|dict_get:passenger.id|dict_get:'payment_amount'|floatformat:2 }}" {% else %} 0.00 {% endif %}"
                                {% if passenger_reservations|dict_get:passenger.id|dict_get:'payment_status' != 'paid' %}disabled{% endif %}>
                     </td>
 
@@ -195,10 +191,13 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        <button type="submit">Zapisz</button>
+        <div class="right">
+            <button type="submit">Zapisz</button>
+        </div>
+        
     </form>
-
-    <a href="{% url 'trip_list' %}">Powrót do listy przejazdów</a>
+    <div class="centered">
+        <a href="{% url 'trip_list' %}" class="button">Powrót do listy przejazdów</a>
+    </div>
 </body>
 </html>

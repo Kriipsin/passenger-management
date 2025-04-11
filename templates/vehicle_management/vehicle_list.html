@@ -10,7 +10,10 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Lista pojazdów</h1>
+    <div class="h1-container">
+        <h1>Lista pojazdów</h1>
+    </div>
+    
     <table>
         <thead>
             <tr>
@@ -21,6 +24,8 @@
                 <th>Liczba miejsc</th>
                 <th>Data przeglądu</th>
                 <th>Uwagi</th>
+                <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -39,7 +44,10 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'vehicle_add' %}">Dodaj nowy pojazd</a>
+
+    <div class="right" style="margin-right: 5%">
+        <a href="{% url 'vehicle_add' %}" class="button">Dodaj nowy pojazd</a>
+    </div>
 
 </body>
 </html>

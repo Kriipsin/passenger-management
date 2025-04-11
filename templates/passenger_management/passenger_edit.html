@@ -10,7 +10,9 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Edytuj dane pasażera</h1>
+    <div class="h1-container">
+        <h1>Edytuj dane pasażera</h1>
+    </div>
     <form action="{% url 'passenger_edit' passenger.id %}" method="post">
         {% csrf_token %}
         <label for="first_name">Imię</label>
@@ -25,9 +27,14 @@
         <label for="phone_number">Telefon</label>
         <input type="tel" name="phone_number" id="phone_number" value="{{ passenger.phone_number }}">
 
-        <button type="submit">Zapisz zmiany</button>
+        <div class="right">
+            <button type="submit">Zapisz</button>
+        </div>
     </form>
-    <a href="{% url 'passenger_list' %}">Powrót do listy pasażerów</a>
+
+    <div class="centered">
+        <a href="{% url 'passenger_list' %}" class="button">Powrót do listy pasażerów</a>
+    </div>
 
 </body>
 </html>

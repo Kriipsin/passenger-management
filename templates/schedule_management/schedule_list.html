@@ -10,7 +10,10 @@
 
     {% include 'partials/navbar.html' %}
 
-    <h1>Lista kursów</h1>
+    <div class="h1-container">
+        <h1>Lista kursów</h1>
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -18,6 +21,8 @@
                 <th>Miejsce początkowe</th>
                 <th>Miejsce docelowe</th>
                 <th>Częstotliwość przejazdu</th>
+                <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -33,7 +38,10 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'schedule_add' %}">Dodaj nowy kurs</a>
+
+    <div class="right" style="margin-right: 5%">
+        <a href="{% url 'schedule_add' %}" class="button">Dodaj nowy kurs</a>
+    </div>
 
 </body>
 </html>
